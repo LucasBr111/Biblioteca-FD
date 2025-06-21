@@ -1,0 +1,748 @@
+/* Variables CSS - Se mantienen como están */
+:root {
+    --color1: #0c577c; /* Azul oscuro principal */
+    --color2: #09486c; /* Azul oscuro un poco más vibrante */
+    --color3: #063a5c; /* Azul intermedio */
+    --color4: #032b4b; /* Azul más claro, casi grisáceo */
+    --color5: #001c3b; /* Azul muy oscuro, casi negro */
+
+    --text-light: #e0e0e0;
+    --text-dark: #333;
+    --background-light: #f8f9fa; /* Un fondo muy sutil */
+    --background-dark: var(--color5);
+    --transition: all 0.3s ease;
+    --shadow-light: rgba(0, 0, 0, 0.08);
+    --shadow-dark: rgba(0, 0, 0, 0.2);
+}
+
+/* Reset y estilos base - Se mantienen como están */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    line-height: 1.6;
+    color: var(--text-dark);
+    background-color: var(--background-light);
+    overflow-x: hidden; /* Evita el scroll horizontal */
+}
+
+/* --- Header & Navegación (Optimizado para Móviles con Offcanvas) --- */
+.navbar {
+    background-color: var(--color5); /* Color más oscuro para el header */
+    padding: 0.8rem 0; /* Un poco menos de padding para un look más compacto */
+    box-shadow: 0 4px 15px var(--shadow-dark);
+    transition: background-color var(--transition);
+    z-index: 1050; /* Asegura que esté por encima del offcanvas cuando está cerrado */
+}
+
+.navbar-brand h1 {
+    color: var(--text-light);
+    font-size: 1.8rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+}
+
+/* Estilo para el botón del menú hamburguesa */
+.navbar-toggler {
+    border: none;
+    padding: 0.25rem 0.75rem;
+    font-size: 1.25rem;
+    line-height: 1;
+    background-color: transparent;
+    border-radius: 0.25rem;
+    transition: box-shadow .15s ease-in-out;
+}
+
+.navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.8%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+/* Estilos para el Offcanvas (Menú lateral) */
+.offcanvas {
+    background-color: var(--color5); /* Fondo oscuro para el menú lateral */
+    color: var(--text-light);
+    width: 280px; /* Ancho del menú lateral */
+}
+
+.offcanvas-header {
+    padding: 1.5rem 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.offcanvas-title {
+    color: var(--color1);
+    font-size: 1.6rem;
+    font-weight: 600;
+}
+
+.offcanvas-body {
+    padding: 1rem;
+}
+
+.offcanvas-body .navbar-nav {
+    flex-direction: column; /* Apila los elementos en el offcanvas */
+    width: 100%;
+}
+
+.offcanvas-body .navbar-nav .nav-item {
+    margin-bottom: 0.5rem;
+    width: 100%; /* Asegura que los items ocupen todo el ancho */
+}
+
+.offcanvas-body .navbar-nav .nav-link {
+    color: var(--text-light);
+    padding: 0.8rem 1.2rem;
+    font-size: 1.1rem;
+    border-radius: 8px; /* Bordes más suaves para los enlaces del menú */
+    transition: var(--transition);
+    text-align: left; /* Alinea el texto a la izquierda */
+    position: relative;
+    overflow: hidden; /* Para el efecto de la barra de fondo */
+    z-index: 1; /* Para que el texto esté por encima de la barra de fondo */
+}
+
+.offcanvas-body .navbar-nav .nav-link:hover,
+.offcanvas-body .navbar-nav .nav-link.active {
+    color: var(--text-light); /* Mantiene el color de texto claro */
+    background-color: transparent; /* No hay fondo sólido */
+}
+
+/* Nuevo efecto para los enlaces del menú lateral: barra deslizante */
+.offcanvas-body .navbar-nav .nav-link::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--color1); /* Tu color principal */
+    transform: translateX(-100%); /* Inicialmente fuera de vista */
+    transition: transform 0.3s ease-out;
+    z-index: -1; /* Detrás del texto */
+    border-radius: 8px;
+}
+
+.offcanvas-body .navbar-nav .nav-link:hover::before,
+.offcanvas-body .navbar-nav .nav-link.active::before {
+    transform: translateX(0); /* Se desliza para cubrir el enlace */
+}
+
+/* Botones dentro del Offcanvas */
+.offcanvas-body .navbar-nav .btn {
+    width: calc(100% - 2rem); /* Ocupa casi todo el ancho con padding */
+    margin: 0.5rem 1rem; /* Centra y da espacio */
+    text-align: left; /* Alinea el texto del botón a la izquierda */
+    justify-content: flex-start; /* Alinea contenido del botón a la izquierda */
+    font-size: 1.1rem;
+    padding: 0.8rem 1.2rem;
+    border-radius: 8px;
+    box-shadow: none; /* Eliminar sombras para un look más limpio en el menú */
+}
+
+.offcanvas-body .navbar-nav .btn-primary {
+    background-color: var(--color1);
+    border-color: var(--color1);
+}
+
+.offcanvas-body .navbar-nav .btn-primary:hover {
+    background-color: var(--color2);
+    border-color: var(--color2);
+}
+
+.offcanvas-body .navbar-nav .btn-info { /* Para el botón Cargar Libro */
+    background-color: var(--color4); /* Usando un color de tu paleta */
+    border-color: var(--color4);
+}
+
+.offcanvas-body .navbar-nav .btn-info:hover {
+    background-color: var(--color3);
+    border-color: var(--color3);
+}
+
+
+/* --- Main Content - Padding superior se ajusta si el header es fijo --- */
+main {
+    padding-top: 80px; /* Ajuste para un header un poco más compacto */
+    min-height: calc(100vh - 80px);
+}
+
+/* --- Hero Section - Mejoras visuales --- */
+.hero {
+    background: linear-gradient(rgba(3, 43, 75, 0.85), rgba(0, 28, 59, 0.95)), url('../assets/img/hero.jpg');
+    background-size: cover;
+    background-position: center;
+    height: 600px; /* Altura más generosa para un impacto visual */
+    position: relative;
+    overflow: hidden;
+    display: flex; /* Asegura centrado con flexbox */
+    align-items: center;
+    justify-content: center;
+}
+
+.hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at top left, var(--color1) 0%, transparent 40%),
+                radial-gradient(circle at bottom right, var(--color3) 0%, transparent 40%);
+    opacity: 0.4; /* Aumenta un poco la opacidad del overlay */
+    mix-blend-mode: overlay;
+    z-index: 0; /* Asegura que esté detrás del contenido del hero */
+}
+
+.hero-content {
+    z-index: 1; /* Asegura que el contenido esté por encima del overlay */
+    max-width: 800px; /* Limita el ancho del texto para mejor legibilidad */
+    padding: 0 20px; /* Padding para evitar que el texto toque los bordes en móviles */
+}
+
+.hero-content h1 {
+    font-size: 3.8rem; /* Tamaño de fuente un poco más grande */
+    font-weight: 700;
+    line-height: 1.2;
+    text-shadow: 3px 3px 10px var(--shadow-dark); /* Sombra más pronunciada */
+    margin-bottom: 1rem; /* Ajuste de margen */
+}
+
+.hero-content p {
+    font-size: 1.6rem; /* Tamaño de fuente un poco más grande */
+    font-weight: 300;
+    margin-bottom: 3rem; /* Margen inferior más generoso */
+    opacity: 0.9; /* Ligeramente más transparente */
+}
+
+.custom-btn {
+    background-color: var(--color1);
+    border-color: var(--color1);
+    padding: 1rem 2.5rem; /* Botón un poco más grande */
+    font-size: 1.3rem; /* Texto más grande */
+    border-radius: 50px;
+    transition: all 0.4s ease;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4); /* Sombra más fuerte */
+    display: inline-flex; /* Para alinear el icono y el texto */
+    align-items: center; /* Alineación vertical */
+}
+
+.custom-btn:hover {
+    background-color: var(--color2);
+    border-color: var(--color2);
+    transform: translateY(-5px) scale(1.02); /* Efecto de elevación más pronunciado y ligero crecimiento */
+    box-shadow: 0 12px 25px rgba(0, 0, 0, 0.5);
+}
+
+.custom-btn i {
+    margin-left: 10px; /* Espacio entre el texto y el icono */
+}
+
+/* Animaciones de entrada (mantener o ajustar si usas animate.css) */
+.animate__animated.animate__fadeInUp {
+    animation-duration: 1.5s; /* Animación más lenta */
+    animation-fill-mode: both; /* Mantiene el estado final de la animación */
+}
+.animate__animated.animate__fadeInDown {
+    animation-duration: 1.2s;
+    animation-fill-mode: both;
+}
+.animate__animated.animate__pulse {
+    animation-duration: 2.5s; /* Pulso más suave */
+    animation-iteration-count: infinite;
+}
+
+/* --- Sección de libros - Mejoras visuales --- */
+.books-section {
+    padding: 80px 0; /* Más padding para espacio vertical */
+    background-color: var(--background-light);
+}
+
+.books-section h2 {
+    color: var(--color3);
+    font-size: 3.2rem; /* Título un poco más grande */
+    font-weight: 700;
+    margin-bottom: 4rem; /* Más espacio debajo del título */
+    position: relative;
+    padding-bottom: 15px; /* Más espacio para el subrayado */
+}
+
+.books-section h2::after {
+    width: 100px; /* Subrayado más largo */
+    height: 5px; /* Subrayado más grueso */
+    background-color: var(--color1);
+    border-radius: 3px;
+}
+
+.books-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 3rem; /* Mayor espacio entre tarjetas para móviles */
+    justify-content: center;
+    padding: 0 15px; /* Padding para que no toque los bordes en móviles */
+   
+}
+
+.book-card {
+    background: white;
+    border-radius: 20px; /* Bordes más redondeados */
+    padding: 2rem; /* Más padding interno */
+    box-shadow: 0 10px 30px var(--shadow-light); /* Sombra más pronunciada */
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    cursor: pointer;
+    overflow: hidden;
+    justify-content: space-between;
+    position: relative;
+    z-index: 1; /* Para que el contenido esté por encima del overlay */
+    width: 100%;
+}
+
+.book-card:hover {
+    transform: translateY(-10px) scale(1.03); /* Efecto de elevación y crecimiento más notorio */
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2); /* Sombra más fuerte al pasar el mouse */
+}
+
+.book-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to top right, var(--color1) 0%, transparent 60%); /* Ajuste de gradiente */
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    z-index: 0;
+    border-radius: 20px; /* Bordes redondeados para el overlay */
+}
+
+.book-card:hover::before {
+    opacity: 0.1; /* Un overlay más visible al pasar el mouse */
+}
+
+.book-image {
+    width: 100%;
+    max-height: 280px; /* Altura máxima un poco mayor para las imágenes */
+    object-fit: contain;
+    border-radius: 15px; /* Bordes más redondeados */
+    margin-bottom: 2rem; /* Más margen inferior */
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15); /* Sombra más pronunciada */
+    transition: transform 0.4s ease;
+}
+
+.book-card:hover .book-image {
+    transform: scale(1.05); /* Ligeramente más grande al pasar el mouse */
+}
+
+.book-title {
+    font-size: 1.7rem; /* Título de libro más grande */
+    font-weight: 600;
+    color: var(--color2);
+    margin-bottom: 0.8rem;
+}
+
+.author {
+    font-style: italic;
+    color: var(--color4);
+    font-size: 1rem; /* Fuente un poco más grande */
+    margin-top: 0.5rem;
+    margin-bottom: 1.2rem; /* Ajustado margen inferior */
+}
+
+.book-description {
+    color: #5a6d7a; /* Un gris azulado un poco más oscuro para mejor contraste */
+    font-size: 1.05rem; /* Texto un poco más grande */
+    line-height: 1.6;
+    flex-grow: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 4; /* Limita la descripción a 4 líneas */
+    -webkit-box-orient: vertical;
+    margin-bottom: 1.5rem; /* Ajustado margen inferior */
+}
+
+.book-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem; /* Más espacio entre los botones */
+    margin-top: 2rem; /* Más margen superior */
+    width: 100%;
+    justify-content: center;
+}
+
+.book-actions .btn {
+    font-size: 1rem; /* Texto un poco más grande en los botones */
+    padding: 0.8rem 1.5rem; /* Más padding para los botones */
+    border-radius: 8px; /* Bordes más suaves */
+    font-weight: 500;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2); /* Sombra para los botones */
+}
+
+.book-actions .btn-read-summary {
+    background-color: var(--color1);
+    border-color: var(--color1);
+}
+
+.book-actions .btn-read-summary:hover {
+    background-color: var(--color2);
+    border-color: var(--color2);
+    transform: translateY(-3px); /* Efecto de elevación más notorio */
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.3);
+}
+
+.book-actions .btn-download {
+    background-color: var(--color4);
+    border-color: var(--color4);
+}
+
+.book-actions .btn-download:hover {
+    background-color: var(--color5);
+    border-color: var(--color5);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.3);
+}
+
+.book-actions .btn i {
+    margin-right: 0.6rem; /* Más espacio entre icono y texto */
+}
+
+/* --- Footer - Mejoras visuales --- */
+footer {
+    background-color: var(--color5);
+    color: var(--text-light);
+    padding: 5rem 0; /* Más padding para un footer más prominente */
+    box-shadow: 0 -5px 20px var(--shadow-dark); /* Sombra más fuerte */
+}
+
+.footer-content {
+    padding-bottom: 2.5rem;
+}
+
+.footer-info h3 {
+    color: var(--color1);
+    font-size: 1.8rem; /* Título del footer más grande */
+    font-weight: 600;
+    margin-bottom: 1.8rem; /* Más margen */
+}
+
+.footer-info p {
+    font-size: 1rem; /* Texto del footer un poco más grande */
+    line-height: 1.8;
+    margin-bottom: 0.6rem;
+    opacity: 0.9; /* Ligeramente más transparente */
+}
+
+.footer-bottom {
+    font-size: 0.95rem; /* Texto del copyright un poco más grande */
+    opacity: 0.8;
+}
+
+/* --- Modal de detalles del libro - Mejoras visuales --- */
+.modal-content {
+    border-radius: 20px; /* Bordes más redondeados */
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3); /* Sombra más fuerte */
+}
+
+.modal-header {
+    background-color: var(--color3);
+    color: white;
+    border-top-left-radius: 20px; /* Asegura bordes redondeados */
+    border-top-right-radius: 20px;
+    padding: 1.8rem; /* Más padding */
+}
+
+.modal-title {
+    font-weight: 600;
+    font-size: 2rem; /* Título del modal más grande */
+}
+
+.modal-header .btn-close {
+    filter: invert(100%);
+    font-size: 1.4rem; /* Botón de cerrar más grande */
+    opacity: 0.9;
+}
+
+.modal-body {
+    padding: 2.5rem; /* Más padding */
+    color: var(--text-dark);
+}
+
+#modalBookImage {
+    border: 3px solid var(--color4); /* Borde más pronunciado */
+    padding: 8px; /* Más padding */
+    border-radius: 15px; /* Bordes más redondeados */
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15); /* Sombra sutil */
+}
+
+#modalBookTitle {
+    color: var(--color2);
+    font-size: 2.3rem; /* Título del libro en modal más grande */
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+.modal-body p {
+    font-size: 1.15rem; /* Texto del modal un poco más grande */
+    line-height: 1.7;
+}
+
+.modal-body p span {
+    font-weight: 600; /* Peso de fuente más fuerte para la información clave */
+    color: var(--color3);
+}
+
+.modal-footer {
+    border-top: 1px solid #e0e0e0; /* Borde más claro */
+    background-color: #f5f7fa; /* Fondo ligeramente más claro */
+    border-bottom-left-radius: 20px;
+    border-bottom-right-radius: 20px;
+    padding: 1.5rem; /* Más padding */
+}
+
+.modal-footer .btn-secondary {
+    background-color: var(--color4);
+    border-color: var(--color4);
+}
+
+.modal-footer .btn-secondary:hover {
+    background-color: var(--color5);
+    border-color: var(--color5);
+    transform: translateY(-2px);
+}
+
+/* --- Responsive Media Queries --- */
+
+/* Esconde el navbar collapse por defecto en pantallas grandes y ajusta el offcanvas */
+@media (min-width: 992px) {
+    .navbar-expand-lg .navbar-collapse {
+        display: flex !important; /* Asegura que se muestre en desktop */
+        width: auto;
+    }
+    .offcanvas-lg { /* Oculta el offcanvas en pantallas grandes si se usa */
+        visibility: hidden !important;
+    }
+    .navbar-toggler {
+        display: none !important; /* Oculta el botón hamburguesa en desktop */
+    }
+     .navbar-nav .nav-link::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        width: 0;
+        height: 2px;
+        background-color: var(--color1);
+        transition: all 0.3s ease-out;
+        transform: translateX(-50%);
+    }
+
+    .navbar-nav .nav-link:hover::after,
+    .navbar-nav .nav-link.active::after {
+        width: 80%;
+    }
+    .navbar-nav .nav-link { /* Vuelve a aplicar estilos para desktop */
+        color: var(--text-light);
+        font-weight: 500;
+        font-size: 1.1rem;
+        padding: 0.5rem 1rem;
+        border-radius: 5px;
+        transition: var(--transition);
+        position: relative;
+    }
+    .navbar-nav .nav-link:hover,
+    .navbar-nav .nav-link.active {
+        color: var(--color1); /* Un azul más claro al pasar el mouse */
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+    .navbar-nav .nav-item {
+        margin-bottom: 0; /* Elimina el margen inferior en desktop */
+    }
+    .navbar-nav .btn {
+        margin-left: 10px; /* Espacio entre botones en desktop */
+        margin-top: 0; /* Elimina margen superior en desktop */
+        width: auto; /* Ancho automático para botones en desktop */
+        text-align: center; /* Centra el texto del botón en desktop */
+        justify-content: center; /* Centra el contenido del botón en desktop */
+    }
+
+}
+
+@media (max-width: 991.98px) { /* breakpoint para móviles y tablets */
+    .navbar-collapse { /* Este div ya no es el que contiene el menú en móvil */
+        display: none !important; /* Oculta la versión de desktop del menú */
+    }
+    .navbar-toggler {
+        display: block; /* Muestra el botón hamburguesa */
+        order: 1; /* Coloca el toggler a la derecha del logo si es necesario */
+    }
+    .navbar-brand {
+        margin-right: auto; /* Empuja el brand a la izquierda */
+    }
+
+    /* Asegura que el offcanvas tenga su propia lógica para el menú */
+    /* Los estilos para .offcanvas ya están arriba */
+
+    .hero {
+        height: 500px; /* Ajuste para pantallas de tablet */
+    }
+
+    .hero-content h1 {
+        font-size: 3rem;
+    }
+
+    .hero-content p {
+        font-size: 1.3rem;
+    }
+
+    .custom-btn {
+        font-size: 1.1rem;
+        padding: 0.9rem 2rem;
+    }
+
+    .books-section h2 {
+        font-size: 2.5rem;
+    }
+
+    .books-grid {
+        gap: 2rem;
+    }
+
+    .book-card {
+        padding: 1.5rem;
+        border-radius: 15px;
+    }
+
+    .book-image {
+        max-height: 220px;
+    }
+
+    .book-title {
+        font-size: 1.5rem;
+    }
+
+    .book-description {
+        font-size: 1rem;
+        -webkit-line-clamp: 3; /* Limita un poco más en pantallas más pequeñas */
+    }
+
+    .book-actions {
+        flex-direction: column; /* Apila los botones verticalmente */
+        align-items: center; /* Centra los botones apilados */
+        gap: 0.8rem;
+    }
+
+    .book-actions .btn {
+        width: 90%; /* Los botones ocupan más ancho */
+        max-width: 300px; /* Limita su ancho */
+    }
+
+    .modal-header {
+        padding: 1.2rem;
+    }
+
+    .modal-title {
+        font-size: 1.6rem;
+    }
+
+    .modal-body {
+        padding: 1.5rem;
+    }
+
+    #modalBookImage {
+        max-width: 200px; /* Ajuste de tamaño en modal para móviles */
+        margin-bottom: 1.5rem;
+    }
+
+    #modalBookTitle {
+        font-size: 1.8rem;
+    }
+
+    .modal-body p {
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 767.98px) { /* Smaler mobile devices */
+    .hero {
+        height: 450px;
+    }
+
+    .hero-content h1 {
+        font-size: 2.2rem;
+    }
+
+    .hero-content p {
+        font-size: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .custom-btn {
+        font-size: 0.95rem;
+        padding: 0.8rem 1.5rem;
+    }
+
+    .books-section h2 {
+        font-size: 2rem;
+        margin-bottom: 3rem;
+    }
+
+    .books-grid {
+        grid-template-columns: 1fr; /* Una columna en móviles pequeños */
+        gap: 1.5rem;
+    }
+
+    .book-card {
+        padding: 1.2rem;
+    }
+
+    .book-image {
+        max-height: 200px;
+    }
+
+    .book-title {
+        font-size: 1.3rem;
+    }
+
+    .footer-info {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    .footer-info:last-child {
+        margin-bottom: 0;
+    }
+}
+
+
+/* Animaciones adicionales - Se mantienen como están */
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.book-card {
+    animation: fadeInScale 0.6s ease-out forwards;
+    opacity: 0; /* Asegura que no se muestre antes de la animación */
+}
+
+/* Para aplicar la animación a cada tarjeta con un pequeño delay */
+.book-card:nth-child(1) { animation-delay: 0.1s; }
+.book-card:nth-child(2) { animation-delay: 0.2s; }
+.book-card:nth-child(3) { animation-delay: 0.3s; }
+.book-card:nth-child(4) { animation-delay: 0.4s; }
+.book-card:nth-child(5) { animation-delay: 0.5s; }
+.book-card:nth-child(6) { animation-delay: 0.6s; }
+/* Puedes seguir agregando más si tienes muchos libros */
