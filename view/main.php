@@ -37,29 +37,27 @@ $username = $isLoggedIn ? htmlspecialchars($_SESSION['username'] ?? 'Usuario') :
     <style>
         /* Estilos adicionales para el dropdown de usuario en el offcanvas */
         .user-dropdown {
-            background-color:rgb(119, 146, 172); /* Un fondo sutil para el área de usuario */
-            border-radius: 0.5rem;
             padding: 0.75rem 1rem;
             margin-bottom: 1rem;
-            color: #34495e;
-            font-weight: 600;
-            cursor: pointer;
-            width: 100%;
-            text-align: left;
-            transition: background-color 0.2s ease;
+            background-color: #1e3a5f;
+            color: #ffffff !important;
+            border-radius: 8px;
+            transition: background-color 0.3s ease;
         }
+
         .user-dropdown:hover {
-            background-color: #e2e6ea;
-            color: #34495e;
-        }
+        background-color: #2c3e50;
+        color: #ffffff !important;
+    }
         .user-dropdown .user-avatar {
             font-size: 1.5rem; /* Tamaño del icono de usuario */
-            color: #6c757d;
+            color:rgb(255, 255, 255);
         }
         .user-dropdown .fas.fa-chevron-down {
             margin-left: auto; /* Empuja la flecha a la derecha */
         }
         .dropdown-menu-offcanvas {
+            border: 1px solid #e0e0e0;
             width: calc(100% - 2rem); /* Ajusta el ancho para que coincida con el offcanvas */
             margin-left: 1rem; /* Margen para que se alinee */
             margin-right: 1rem;
@@ -70,13 +68,95 @@ $username = $isLoggedIn ? htmlspecialchars($_SESSION['username'] ?? 'Usuario') :
         .dropdown-menu-offcanvas .dropdown-header {
             padding: 0.75rem 1.5rem;
             font-size: 0.9rem;
-            color: #6c757d;
             white-space: normal; /* Permite que el texto se ajuste */
+            font-weight: 600;
+            color: #343a40;
+            background-color: #f8f9fa;
         }
         .dropdown-menu-offcanvas .dropdown-item {
             padding: 0.75rem 1.5rem;
-            font-weight: 500;
+            font-weight: 500;        
         }
+        .dropdown-menu-offcanvas .dropdown-item:hover {
+        background-color: #f1f1f1;
+        border-radius: 8px;
+    }
+
+        .navbar.fixed-top {
+            background-color: #001c3b;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn {
+        border-radius: 8px;
+        font-weight: 600;
+    }
+
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+
+    .btn-primary:hover {
+        background-color: #0056b3;
+        border-color: #0056b3;
+    }
+
+    .btn-info {
+        background-color: #17a2b8;
+        border-color: #17a2b8;
+    }
+
+    .btn-info:hover {
+        background-color: #117a8b;
+        border-color: #117a8b;
+    }
+
+    .btn-warning {
+        background-color: #ffc107;
+        border-color: #ffc107;
+        color: #212529;
+    }
+
+    .btn-warning:hover {
+        background-color: #e0a800;
+        border-color: #e0a800;
+    }
+
+    .navbar-brand img {
+        transition: transform 0.3s ease;
+    }
+
+    .navbar-brand:hover img {
+        transform: rotate(5deg);
+    }
+
+    .nav-link {
+        color: #ffffff !important;
+        font-weight: 500;
+        transition: color 0.3s ease;
+    }
+
+    .nav-link:hover {
+        color: #ffd700 !important; /* Dorado para resaltar */
+    }
+
+    .custom-btn {
+        border-radius: 30px;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+        letter-spacing: 1px;
+    }
+
+    .custom-btn:hover {
+        transform: scale(1.05);
+    }
+        
     </style>
 </head>
 <body>
@@ -117,7 +197,7 @@ $username = $isLoggedIn ? htmlspecialchars($_SESSION['username'] ?? 'Usuario') :
                         <?php endif; ?>
 
                         <li class="nav-item dropdown d-none d-lg-block">
-                            <a class="nav-link dropdown-toggle user-dropdown d-flex align-items-center" href="#" id="userDropdownDesktop" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <a class="nav-link dropdown-toggle user-dropdown d-flex align-items-center" href="#" id="userDropdownDesktop" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="padding-top: 0px; padding-bottom: 0px; margin-left: 15px; margin-top: 15px;">
                                 <?php if ($isLoggedIn): ?>
                                     <div class="user-avatar me-2">
                                         <i class="fas fa-user-circle"></i>
@@ -136,7 +216,7 @@ $username = $isLoggedIn ? htmlspecialchars($_SESSION['username'] ?? 'Usuario') :
                                     </div>
                                 <?php endif; ?>
                             </a>
-                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdownDesktop">
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdownDesktop" >
                                 <?php if ($isLoggedIn): ?>
                                     <div class="dropdown-header">
                                         Sesión iniciada como<br>

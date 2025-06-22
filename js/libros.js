@@ -1,5 +1,5 @@
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelector('.books-grid').addEventListener('click', function(e) {
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelector('.books-grid').addEventListener('click', function (e) {
         // Buscar la tarjeta del libro más cercana, no el botón directamente
         const card = e.target.closest('.book-card');
 
@@ -43,6 +43,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (bookData.pdf && bookData.pdf !== 'assets/books/') {
             modalDownloadButton.href = bookData.pdf;
+            // Abre en una nueva pestaña
+            modalDownloadButton.target = '_blank';
             modalDownloadButton.style.display = 'inline-block';
         } else {
             modalDownloadButton.style.display = 'none';
@@ -50,6 +52,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (bookData.summary && bookData.summary !== 'null') {
             modalResumeButton.href = bookData.summary;
+            // También puedes añadir target="_blank" si quieres que el resumen se abra en una nueva pestaña
+            modalResumeButton.target = '_blank';
             modalResumeButton.style.display = 'inline-block';
         } else {
             modalResumeButton.style.display = 'none';

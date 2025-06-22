@@ -94,6 +94,7 @@ class books
      *
      * @return array Una lista de libros.
      */
+
     public function getAllPublishedBooks()
     {
         try {
