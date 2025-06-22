@@ -18,6 +18,11 @@ $userAdmin = (isset($_SESSION['is_admin']) && $_SESSION['is_admin'] === true);
 $isLoggedIn = isset($_SESSION['user_id']);
 $username = $isLoggedIn ? htmlspecialchars($_SESSION['username'] ?? 'Usuario') : 'Invitado';
 
+// Recuperar los valores de búsqueda y ordenamiento para pre-rellenar el formulario
+// NOTA: Estas variables ya no se usan directamente para el filtrado en PHP,
+// pero las mantenemos por si decides volver a un enfoque híbrido o para depuración.
+// Para el filtrado en cliente, los valores iniciales se configuran en JS.
+
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -156,7 +161,57 @@ $username = $isLoggedIn ? htmlspecialchars($_SESSION['username'] ?? 'Usuario') :
     .custom-btn:hover {
         transform: scale(1.05);
     }
-        
+
+    /* Estilos para el formulario de búsqueda y filtros */
+    .search-filter-section {
+        background-color: var(--background-light); /* Asume que --background-light está definido en style.css */
+        padding: 2rem 0;
+        border-bottom: 1px solid #dee2e6;
+    }
+    .search-filter-form .form-control,
+    .search-filter-form .form-select {
+        border-radius: 0.5rem;
+    }
+    .search-filter-form .btn {
+        border-radius: 0.5rem;
+    }
+
+    /* Mejora visual para la sección de búsqueda */
+.search-filter-section {
+    background-color: #f8f9fa; /* Gris claro para fondo */
+    padding: 1rem 0;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.search-filter-form .form-control,
+.search-filter-form .form-select {
+    border-radius: 8px; /* Redondeado suave */
+    font-size: 0.9rem; /* Tamaño de fuente ligeramente reducido */
+}
+
+.search-filter-form .btn {
+    border-radius: 8px; /* Redondeado consistente */
+}
+
+#searchButton {
+    background-color: #007bff; /* Azul primario */
+    border-color: #007bff;
+}
+
+#searchButton:hover {
+    background-color: #0056b3; /* Sombra más oscura al hover */
+    border-color: #0056b3;
+}
+
+#applyFiltersButton {
+    background-color: #6c757d; /* Gris oscuro */
+    border-color: #6c757d;
+}
+
+#applyFiltersButton:hover {
+    background-color: #5a6268; /* Sombra más oscura al hover */
+    border-color: #5a6268;
+}
     </style>
 </head>
 <body>
@@ -227,7 +282,6 @@ $username = $isLoggedIn ? htmlspecialchars($_SESSION['username'] ?? 'Usuario') :
                                 <?php else: ?>
                                     <div class="dropdown-header">No has iniciado sesión</div>
                                     <li><hr class="dropdown-divider"></li>
-                                    <!-- ENLACES CORREGIDOS AQUÍ -->
                                     <li><a class="dropdown-item" href="index.php?c=account&a=loginForm"><i class="fas fa-sign-in-alt me-2"></i>Iniciar Sesión</a></li>
                                     <li><a class="dropdown-item" href="index.php?c=account&a=registerForm"><i class="fas fa-user-plus me-2"></i>Registrarse</a></li>
                                 <?php endif; ?>
@@ -279,7 +333,6 @@ $username = $isLoggedIn ? htmlspecialchars($_SESSION['username'] ?? 'Usuario') :
                             <?php else: ?>
                                 <div class="dropdown-header">No has iniciado sesión</div>
                                 <li><hr class="dropdown-divider"></li>
-                                <!-- ENLACES CORREGIDOS AQUÍ -->
                                 <li><a class="dropdown-item" href="index.php?c=account&a=loginForm" data-bs-dismiss="offcanvas"><i class="fas fa-sign-in-alt me-2"></i>Iniciar Sesión</a></li>
                                 <li><a class="dropdown-item" href="index.php?c=account&a=registerForm" data-bs-dismiss="offcanvas"><i class="fas fa-user-plus me-2"></i>Registrarse</a></li>
                             <?php endif; ?>
@@ -326,45 +379,59 @@ $username = $isLoggedIn ? htmlspecialchars($_SESSION['username'] ?? 'Usuario') :
         </div>
     </section>
 
+    <!-- Sección de Búsqueda y Filtros -->
+<section class="search-filter-section py-3 bg-light">
+    <div class="container">
+        <form id="filterForm" class="row g-2 align-items-center justify-content-center search-filter-form">
+            <!-- Campo de búsqueda -->
+            <div class="col-12 col-md-4 col-lg-3">
+                <div class="input-group">
+                    <input type="search" class="form-control" id="search_query" name="search_query" placeholder="Buscar por título o autor..." aria-label="Buscar">
+                    <button type="button" class="btn btn-primary btn-sm" id="searchButton">
+                        <i class="fas fa-search me-1"></i>Buscar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Selector de ordenamiento -->
+            <div class="col-6 col-md-3 col-lg-2">
+                <select class="form-select form-select-sm" id="sort_by" name="sort_by">
+                    <option value="created_at">Fecha de Carga</option>
+                    <option value="title">Título</option>
+                    <option value="author">Autor</option>
+                    <option value="year">Año</option>
+                </select>
+            </div>
+
+            <!-- Orden ascendente/descendente -->
+            <div class="col-6 col-md-2 col-lg-1">
+                <select class="form-select form-select-sm" id="sort_order" name="sort_order">
+                    <option value="DESC">Descendente</option>
+                    <option value="ASC">Ascendente</option>
+                </select>
+            </div>
+
+            <!-- Botón de filtrar -->
+            <div class="col-12 col-md-2 col-lg-1 d-grid">
+                <button type="button" class="btn btn-secondary btn-sm" id="applyFiltersButton">
+                    <i class="fas fa-filter me-1"></i>Filtrar
+                </button>
+            </div>
+        </form>
+    </div>
+</section>
+
     <section id="libros" class="books-section py-5">
         <div class="container">
             <h2 class="text-center mb-5 animate_animated animate_fadeInDown">Nuestro Catálogo</h2>
-            <div class="books-grid justify-content-center">
-            <?php if (!empty($libros)):?>
-    <?php foreach ($libros as $r): ?>
-        <?php
-            $displayPdfPath = htmlspecialchars($r['pdf_path']);
-            if (strpos($displayPdfPath, 'assets/temp_uploads/') !== false) {
-                $displayPdfPath = str_replace('assets/temp_uploads/', 'assets/books/', $displayPdfPath);
-            }
-        ?>
-        <div class="book-card-wrapper"> <div class="card h-100 book-card animate_animated animate_fadeIn"
-                data-id="<?= htmlspecialchars($r['id']) ?>"
-                data-title="<?= htmlspecialchars($r['title']) ?>"
-                data-author="<?= htmlspecialchars($r['author']) ?>"
-                data-year="<?= htmlspecialchars($r['year']) ?>"
-                data-genre="<?= htmlspecialchars($r['genre']) ?>"
-                data-description="<?= htmlspecialchars($r['description']) ?>"
-                data-image="<?= htmlspecialchars($r['image_path']) ?>"
-                data-pdf="<?= $displayPdfPath ?>"
-                data-summary="<?= htmlspecialchars($r['url_resumen']) ?>">
-                <img src="<?= htmlspecialchars($r['image_path']) ?>" class="card-img-top book-image" alt="Portada de <?= htmlspecialchars($r['title']) ?>">
-                <div class="card-body d-flex flex-column">
-                    <h5 class="card-title book-title"><?= htmlspecialchars($r['title']) ?></h5>
-                    <p class="card-text text-muted book-author">Por: <?= htmlspecialchars($r['author']) ?></p>
-                    <p class="card-text book-description-short flex-grow-1"><?= htmlspecialchars(mb_strimwidth($r['description'], 0, 120, "...", "UTF-8")) ?></p>
-            
+            <div class="books-grid justify-content-center" id="booksGrid">
+            <?php if (empty($libros)):?>
+                <div class="col-12 text-center py-5">
+                    <p class="lead text-muted">No hay libros disponibles en el catálogo en este momento (desde PHP).</p>
+                    <i class="fas fa-box-open fa-3x text-secondary mt-3"></i>
                 </div>
-            </div>
-        </div>
-    
-            <?php endforeach; ?>
-                <?php else: ?>
-                    <div class="col-12 text-center">
-                        <p class="lead text-muted">No hay libros disponibles en el catálogo en este momento.</p>
-                        <i class="fas fa-box-open fa-3x text-secondary mt-3"></i>
-                    </div>
-                <?php endif; ?>
+            <?php endif; ?>
+            <!-- Los libros se renderizarán aquí dinámicamente con JavaScript -->
             </div>
         </div>
     </section>
@@ -554,7 +621,40 @@ $username = $isLoggedIn ? htmlspecialchars($_SESSION['username'] ?? 'Usuario') :
     <script src="js/libros.js"></script>
 
     <script>
+        // Declaramos allBooks globalmente para que sea accesible
+        let allBooks = []; 
+        const booksGrid = document.getElementById('booksGrid');
+        const searchInput = document.getElementById('search_query');
+        const sortBySelect = document.getElementById('sort_by');
+        const sortOrderSelect = document.getElementById('sort_order');
+        const searchButton = document.getElementById('searchButton');
+        const applyFiltersButton = document.getElementById('applyFiltersButton');
+
+
         document.addEventListener('DOMContentLoaded', function() {
+            // Inicializa allBooks con los datos de PHP solo una vez
+            // Asegúrate de que $libros sea un array JSON válido
+            allBooks = <?php echo json_encode($libros); ?>;
+            
+            // *** IMPORTANTE PARA LA DEPURACIÓN ***
+            console.log("Contenido inicial de allBooks (desde PHP):", allBooks);
+
+            // Renderiza y aplica filtros/ordenamiento inicial
+            // (Esto asegura que los libros se muestren al cargar, y aplica cualquier orden por defecto)
+            applyFiltersAndSort();
+
+            // Añade event listeners para búsqueda y filtros
+            searchButton.addEventListener('click', applyFiltersAndSort);
+            applyFiltersButton.addEventListener('click', applyFiltersAndSort);
+            searchInput.addEventListener('keyup', (event) => {
+                if (event.key === 'Enter') {
+                    applyFiltersAndSort();
+                }
+            });
+            sortBySelect.addEventListener('change', applyFiltersAndSort);
+            sortOrderSelect.addEventListener('change', applyFiltersAndSort);
+
+
             const catalogoLink = document.querySelector('a[href="#libros"]');
             if (catalogoLink) {
                 catalogoLink.addEventListener('click', function(e) {
@@ -599,7 +699,7 @@ $username = $isLoggedIn ? htmlspecialchars($_SESSION['username'] ?? 'Usuario') :
                         reverseButtons: true
                     }).then((result) => {
                         if (result.isConfirmed) {
-                            window.location.href = 'index.php?c=account&a=loginForm'; // CORREGIDO AQUÍ TAMBIÉN
+                            window.location.href = 'index.php?c=account&a=loginForm';
                         }
                     });
                 <?php endif; ?>
@@ -635,6 +735,93 @@ $username = $isLoggedIn ? htmlspecialchars($_SESSION['username'] ?? 'Usuario') :
             }
             window.copyToClipboard = copyToClipboard;
         });
+
+        /**
+         * Renderiza las tarjetas de libros en el DOM.
+         * @param {Array} booksToRender - Array de objetos de libros a mostrar.
+         */
+        function renderBooks(booksToRender) {
+            booksGrid.innerHTML = ''; // Limpiar el contenido actual
+            if (booksToRender.length === 0) {
+                booksGrid.innerHTML = `
+                    <div class="col-12 text-center py-5">
+                        <p class="lead text-muted">No se encontraron libros que coincidan con tu búsqueda o filtros.</p>
+                        <i class="fas fa-box-open fa-3x text-secondary mt-3"></i>
+                    </div>
+                `;
+                return;
+            }
+
+            booksToRender.forEach(book => {
+                const bookCardHtml = `
+                    <div class="book-card-wrapper">
+                        <div class="card h-100 book-card animate_animated animate_fadeIn"
+                            data-id="${book.id}"
+                            data-title="${book.title}"
+                            data-author="${book.author}"
+                            data-year="${book.year}"
+                            data-genre="${book.genre}"
+                            data-description="${book.description}"
+                            data-image="${book.image_path}"
+                            data-pdf="${book.pdf}"
+                            data-summary="${book.summary}">
+                            <img src="${book.image_path}" class="card-img-top book-image" alt="Portada de ${book.title}">
+                            <div class="card-body d-flex flex-column">
+                                <h5 class="card-title book-title">${book.title}</h5>
+                                <p class="card-text text-muted book-author">Por: ${book.author}</p>
+                                <p class="card-text book-description-short flex-grow-1">${book.description.substring(0, 120)}...</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                booksGrid.innerHTML += bookCardHtml;
+            });
+        }
+
+        /**
+         * Aplica los filtros y el ordenamiento a la lista de libros y los renderiza.
+         */
+        function applyFiltersAndSort() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const sortBy = sortBySelect.value;
+            const sortOrder = sortOrderSelect.value;
+
+            let filteredBooks = allBooks.filter(book => {
+                // Asegúrate de que las propiedades existan antes de llamar a toLowerCase()
+                const titleMatch = (book.title ? book.title.toLowerCase() : '').includes(searchTerm);
+                const authorMatch = (book.author ? book.author.toLowerCase() : '').includes(searchTerm);
+                return titleMatch || authorMatch;
+            });
+
+            filteredBooks.sort((a, b) => {
+                let valA, valB;
+
+                if (sortBy === 'created_at') {
+                    // Convertir a objetos Date para una comparación precisa de tiempo
+                    valA = new Date(a.created_at_timestamp);
+                    valB = new Date(b.created_at_timestamp);
+                } else if (sortBy === 'year') {
+                    // Asegúrate de que 'year' sea un número, convierte a 0 si es nulo o inválido para evitar errores
+                    valA = parseInt(a.year) || 0;
+                    valB = parseInt(b.year) || 0;
+                } else { // 'title' o 'author'
+                    // Asegúrate de que las propiedades existan antes de llamar a toLowerCase()
+                    valA = (a[sortBy] ? a[sortBy].toLowerCase() : '');
+                    valB = (b[sortBy] ? b[sortBy].toLowerCase() : '');
+                }
+                
+                if (valA < valB) {
+                    return sortOrder === 'ASC' ? -1 : 1;
+                }
+                if (valA > valB) {
+                    return sortOrder === 'ASC' ? 1 : -1;
+                }
+                return 0; // Son iguales
+            });
+
+            renderBooks(filteredBooks);
+        }
+
     </script>
     
 </body>
