@@ -33,13 +33,7 @@ class AccountController
      */
     public function register()
     {
-        session_start(); // Asegura que la sesión esté iniciada para el token CSRF y mensajes
-
-        // 1. Verificar el token CSRF (Seguridad)
-        if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
-            $this->showMessageAndRedirect('error', 'Error de seguridad: Token CSRF inválido.', 'account', 'registerForm');
-            return;
-        }
+        session_start(); // Asegura que la sesión esté iniciada para el token CSRF y mensa
 
         // 2. Validar datos de entrada
         $username = trim($_POST['username'] ?? '');
@@ -115,11 +109,7 @@ class AccountController
     {
         session_start(); // Asegura que la sesión esté iniciada para el token CSRF y mensajes
 
-        // 1. Verificar el token CSRF
-        if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
-            $this->showMessageAndRedirect('error', 'Error de seguridad: Token CSRF inválido.', 'account', 'loginForm');
-            return;
-        }
+    
 
         // 2. Validar datos de entrada
         $usernameOrEmail = trim($_POST['username_or_email'] ?? '');
@@ -176,7 +166,7 @@ class AccountController
         // Genera un nuevo token CSRF para el formulario que se va a renderizar
         // Esto es importante para que cada formulario tenga un token fresco
         if (!isset($_SESSION['csrf_token'])) {
-             $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
         }
         $csrf_token = $_SESSION['csrf_token']; // Pasa el token a la vista
 
