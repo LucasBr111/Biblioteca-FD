@@ -147,8 +147,9 @@ $username = $isLoggedIn ? htmlspecialchars($_SESSION['username'] ?? 'Usuario') :
                                 <?php else: ?>
                                     <div class="dropdown-header">No has iniciado sesión</div>
                                     <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item" href="index.php?c=account&a=login"><i class="fas fa-sign-in-alt me-2"></i>Iniciar Sesión</a></li>
-                                    <li><a class="dropdown-item" href="index.php?c=account&a=register"><i class="fas fa-user-plus me-2"></i>Registrarse</a></li>
+                                    <!-- ENLACES CORREGIDOS AQUÍ -->
+                                    <li><a class="dropdown-item" href="index.php?c=account&a=loginForm"><i class="fas fa-sign-in-alt me-2"></i>Iniciar Sesión</a></li>
+                                    <li><a class="dropdown-item" href="index.php?c=account&a=registerForm"><i class="fas fa-user-plus me-2"></i>Registrarse</a></li>
                                 <?php endif; ?>
                             </ul>
                         </li>
@@ -198,8 +199,9 @@ $username = $isLoggedIn ? htmlspecialchars($_SESSION['username'] ?? 'Usuario') :
                             <?php else: ?>
                                 <div class="dropdown-header">No has iniciado sesión</div>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="index.php?c=account&a=login" data-bs-dismiss="offcanvas"><i class="fas fa-sign-in-alt me-2"></i>Iniciar Sesión</a></li>
-                                <li><a class="dropdown-item" href="index.php?c=account&a=register" data-bs-dismiss="offcanvas"><i class="fas fa-user-plus me-2"></i>Registrarse</a></li>
+                                <!-- ENLACES CORREGIDOS AQUÍ -->
+                                <li><a class="dropdown-item" href="index.php?c=account&a=loginForm" data-bs-dismiss="offcanvas"><i class="fas fa-sign-in-alt me-2"></i>Iniciar Sesión</a></li>
+                                <li><a class="dropdown-item" href="index.php?c=account&a=registerForm" data-bs-dismiss="offcanvas"><i class="fas fa-user-plus me-2"></i>Registrarse</a></li>
                             <?php endif; ?>
                         </ul>
                     </li>
@@ -517,7 +519,7 @@ $username = $isLoggedIn ? htmlspecialchars($_SESSION['username'] ?? 'Usuario') :
                         reverseButtons: true
                     }).then((result) => {
                         if (result.isConfirmed) {
-                            window.location.href = 'index.php?c=account&a=login';
+                            window.location.href = 'index.php?c=account&a=loginForm'; // CORREGIDO AQUÍ TAMBIÉN
                         }
                     });
                 <?php endif; ?>

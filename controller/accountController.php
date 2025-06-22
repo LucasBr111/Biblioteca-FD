@@ -19,13 +19,44 @@ class AccountController
     }
 
     /**
+     * Genera un nuevo token CSRF si no existe en la sesión y lo devuelve.
+     * @return string El token CSRF actual.
+     */
+    private function generateCSRFToken()
+    {
+        if (empty($_SESSION['csrf_token'])) {
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+        }
+        return $_SESSION['csrf_token'];
+    }
+
+
+    /**
+     * Valida el token CSRF recibido en una solicitud.
+     * Consume el token para evitar ataques de doble envío.
+     * @param string $token El token recibido del formulario o URL.
+     * @return bool True si el token es válido, false en caso contrario.
+     */
+    private function validateCSRFToken($token)
+    {
+        if (!isset($_SESSION['csrf_token']) || $token !== $_SESSION['csrf_token']) {
+            return false;
+        }
+        // Consume el token para que no se reutilice en subsiguientes envíos
+        unset($_SESSION['csrf_token']); 
+        return true;
+    }
+
+    /**
      * Muestra el formulario de registro.
      */
     public function registerForm()
     {
-        // No hay necesidad de pasar datos específicos a la vista en este caso.
-        // Solo renderizar el formulario.
-        $this->render('registro'); // Asumiendo que tienes una vista 'register.php'
+        if (isset($_SESSION['user_id'])) {
+            header('Location: index.php?c=main');
+            exit();
+        }
+         $this->render('registro'); // Asumiendo que tienes una vista 'register.php'
     }
 
     /**
@@ -33,11 +64,13 @@ class AccountController
      */
     public function register()
     {
-        session_start(); // Asegura que la sesión esté iniciada para el token CSRF y mensajes
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->showMessageAndRedirect('error', 'Método de solicitud no permitido.', 'account', 'registerForm', ''); 
+            return;
+        }
 
-        // 1. Verificar el token CSRF (Seguridad)
-        if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
-            $this->showMessageAndRedirect('error', 'Error de seguridad: Token CSRF inválido.', 'account', 'registerForm');
+        if (!$this->validateCSRFToken($_POST['csrf_token'] ?? '')) {
+            $this->showMessageAndRedirect('error', 'Error de seguridad: Token CSRF inválido. Por favor, recarga la página e inténtalo de nuevo.', 'account', 'registerForm', 'Token inválido'); 
             return;
         }
 
@@ -105,7 +138,7 @@ class AccountController
             header('Location: index.php?c=main');
             exit();
         }
-        $this->render('login'); // Asumiendo que tienes una vista 'login.php'
+        $this->render('login', ['csrf_token' => $this->generateCSRFToken()]);
     }
 
     /**
@@ -113,13 +146,17 @@ class AccountController
      */
     public function login()
     {
-        session_start(); // Asegura que la sesión esté iniciada para el token CSRF y mensajes
-
-        // 1. Verificar el token CSRF
-        if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
-            $this->showMessageAndRedirect('error', 'Error de seguridad: Token CSRF inválido.', 'account', 'loginForm');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->showMessageAndRedirect('error', 'Método de solicitud no permitido.', 'account', 'loginForm', ''); 
             return;
         }
+
+        if (!$this->validateCSRFToken($_POST['csrf_token'] ?? '')) {
+            $this->showMessageAndRedirect('error', 'Error de seguridad: Token CSRF inválido. Por favor, recarga la página e inténtalo de nuevo.', 'account', 'loginForm', 'Token inválido'); 
+            return;
+        }
+
+    
 
         // 2. Validar datos de entrada
         $usernameOrEmail = trim($_POST['username_or_email'] ?? '');
@@ -152,11 +189,11 @@ class AccountController
      */
     public function logout()
     {
-        session_start(); // Asegura que la sesión esté iniciada
-        session_unset();   // Elimina todas las variables de sesión
-        session_destroy(); // Destruye la sesión en el servidor
+        session_unset();   
+        session_destroy();
 
-        // Opcional: Eliminar la cookie de sesión
+
+//elimina la cookie de sesión si se está utilizando
         if (ini_get("session.use_cookies")) {
             $params = session_get_cookie_params();
             setcookie(session_name(), '', time() - 42000,
@@ -168,17 +205,20 @@ class AccountController
         $this->showMessageAndRedirect('success', 'Has cerrado sesión correctamente.', 'main');
     }
 
+    /**
+     * Renderiza una vista y pasa datos a ella, incluyendo el token CSRF.
+     * @param string $viewName El nombre de la vista (sin .php).
+     * @param array $data Un array asociativo de datos a pasar a la vista.
+     */
+
     private function render(string $viewName, array $data = [])
     {
-        // Extrae los datos para que estén disponibles como variables en la vista
-        extract($data); 
+        
+        extract($data);
 
-        // Genera un nuevo token CSRF para el formulario que se va a renderizar
-        // Esto es importante para que cada formulario tenga un token fresco
-        if (!isset($_SESSION['csrf_token'])) {
-             $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+        if (!isset($csrf_token)) {
+            $csrf_token = $this->generateCSRFToken();
         }
-        $csrf_token = $_SESSION['csrf_token']; // Pasa el token a la vista
 
         // Incluye el archivo de la vista
         $viewPath = __DIR__ . '/../view/account/' . $viewName . '.php'; // Ajusta la ruta si es necesario
@@ -200,13 +240,14 @@ class AccountController
      * @param string $title Título del mensaje
      * @param string $controller Controlador al que redirigir
      * @param string $action    Acción del controlador al que redirigir (opcional)
+     * @param string $text      Texto adicional para el mensaje de SweetAlert (opcional)
      */
-    private function showMessageAndRedirect(string $type, string $title, string $controller, string $action = 'index')
+    private function showMessageAndRedirect(string $type, string $title, string $controller, string $text = '', string $action = 'index')
     {
         $_SESSION['sweet_alert'] = [
             'type' => $type,
             'title' => $title,
-            // 'text' => $text // Puedes añadir un campo 'text' si quieres mensajes más largos
+            'text' => $text // Puedes añadir un campo 'text' si quieres mensajes más largos
         ];
 
         $location = "index.php?c={$controller}";
