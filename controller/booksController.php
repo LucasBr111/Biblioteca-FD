@@ -21,8 +21,7 @@ class booksController
     {
         $this->bookModel = new books(); // Instancia del modelo Books
         $this->ensureDirectoriesExist(); // Asegura que los directorios necesarios existan
-        // $this->ensureSession(); // ELIMINADO: session_start() debe ser llamada una sola vez al inicio de la aplicación.
-                                  // Ya lo moví al principio del archivo para este ejemplo, o debe estar en tu index.php principal.
+        $this->ensureSession(); 
     }
 
     /**
@@ -43,17 +42,13 @@ class booksController
         }
     }
 
-    /**
-     * ELIMINADA: La llamada a session_start() se ha movido fuera de la clase
-     * para asegurar que se ejecute una sola vez al inicio de la petición.
-     * Si tu framework/aplicación ya la maneja globalmente, puedes eliminar esta función y su llamada en el constructor.
-     */
-    // private function ensureSession()
-    // {
-    //     if (session_status() === PHP_SESSION_NONE) {
-    //         session_start();
-    //     }
-    // }
+    private function ensureSession()
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+    }
+
 
     /**
      * Valida si el usuario está logueado
@@ -77,13 +72,26 @@ class booksController
     }
 
     /**
-     * Valida token CSRF
+     * Genera token CSRF si no existe.
      */
-    private function validateCSRF()
+    private function generateCSRFToken()
     {
-        if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
-            throw new Exception("Token de seguridad inválido. Recarga la página e intenta de nuevo.");
+        if (!isset($_SESSION['csrf_token'])) {
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
         }
+        return $_SESSION['csrf_token'];
+    }
+
+    /**
+     * Valida el token CSRF recibido en una solicitud.
+     */
+    private function validateCSRFToken($token)
+    {
+        if (!isset($_SESSION['csrf_token']) || $token !== $_SESSION['csrf_token']) {
+            return false;
+        }
+        unset($_SESSION['csrf_token']); // Consumir el token
+        return true;
     }
 
     /**
@@ -189,7 +197,7 @@ class booksController
     {
         try {
             $this->validateLogin();
-            $this->validateCSRF();
+            
             $this->validateUploadData(); // Valida que los archivos estén presentes y correctos
 
             $uploads = $this->processFileUploads(); // Mueve los archivos a assets/temp_uploads/
@@ -370,7 +378,7 @@ class booksController
             if (file_exists($oldCoverPath) && rename($oldCoverPath, $newCoverPath)) {
                 $book['cover_image_path'] = $newCoverPath; // Actualiza la ruta en el objeto $book
             } else {
-                 error_log("Error al mover portada de {$oldCoverPath} a {$newCoverPath}. Existe: " . (file_exists($oldCoverPath) ? 'Sí' : 'No'));
+                error_log("Error al mover portada de {$oldCoverPath} a {$newCoverPath}. Existe: " . (file_exists($oldCoverPath) ? 'Sí' : 'No'));
                 throw new Exception("El archivo de portada no se encuentra o no se puede mover a la ubicación final.");
             }
         }
@@ -437,13 +445,6 @@ class booksController
     /**
      * Genera token CSRF si no existe
      */
-    private function generateCSRFToken()
-    {
-        if (!isset($_SESSION['csrf_token'])) {
-            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-        }
-        return $_SESSION['csrf_token'];
-    }
 
     /**
      * Renderiza una vista

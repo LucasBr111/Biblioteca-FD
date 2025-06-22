@@ -1,6 +1,9 @@
 <?php
 require_once "model/database.php";
-session_start();
+
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
 
 // Verificar si estamos en la URL base
 $currentUrl = $_SERVER['REQUEST_URI'];

@@ -1,3 +1,14 @@
+<?php
+// registro.php
+
+// Esto es importante para que SweetAlert pueda consumir el mensaje
+if (session_status() == PHP_SESSION_NONE) session_start();
+
+// La variable $csrf_token debe ser pasada desde el controlador.
+// Si no está definida (ej. por acceso directo), se inicializa a vacío para evitar errores PHP.
+$csrf_token = $csrf_token ?? ''; 
+?>
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -59,7 +70,7 @@
             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token ?? ''); ?>">
             <button type="submit" class="btn btn-register btn-lg w-100">Registrarse</button>
         </form>
-        <p class="mt-4">¿Ya tienes una cuenta? <a href="index.php?c=account&a=login">Inicia Sesión aquí</a></p>
+        <p class="mt-4">¿Ya tienes una cuenta? <a href="index.php?c=account&a=loginForm">Inicia Sesión aquí</a></p>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -67,9 +78,6 @@
 
     <?php
     // Manejador de SweetAlert directamente incrustado
-    if (session_status() == PHP_SESSION_NONE) {
-        session_start();
-    }
     if (isset($_SESSION['sweet_alert'])) {
         $alert = $_SESSION['sweet_alert'];
         unset($_SESSION['sweet_alert']); // Consumir el mensaje
