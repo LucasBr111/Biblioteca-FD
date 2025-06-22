@@ -37,7 +37,7 @@ $username = $isLoggedIn ? htmlspecialchars($_SESSION['username'] ?? 'Usuario') :
     <style>
         /* Estilos adicionales para el dropdown de usuario en el offcanvas */
         .user-dropdown {
-            background-color: #f8f9fa; /* Un fondo sutil para el área de usuario */
+            background-color:rgb(119, 146, 172); /* Un fondo sutil para el área de usuario */
             border-radius: 0.5rem;
             padding: 0.75rem 1rem;
             margin-bottom: 1rem;

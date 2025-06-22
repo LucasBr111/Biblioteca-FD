@@ -19,7 +19,8 @@ if (session_status() == PHP_SESSION_NONE) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.12.2/dist/sweetalert2.min.css">
-    <link rel="stylesheet" href="../../css/style.css"> <style>
+    <link rel="stylesheet" href="../../css/style.css"> 
+    <!-- <style>
         body {
             background-color: #f0f2f5;
             font-family: 'Poppins', sans-serif;
@@ -55,6 +56,176 @@ if (session_status() == PHP_SESSION_NONE) {
             margin-right: 0.5rem;
             margin-bottom: 0.5rem;
         }
+    </style> -->
+    <style>
+        :root {
+    --color1: #0c577c;
+    --color2: #09486c;
+    --color3: #063a5c;
+    --color4: #032b4b;
+    --color5: #001c3b;
+
+    --text-light: #e0e0e0;
+    --text-dark: #333;
+    --background-light: #f8f9fa;
+    --background-dark: var(--color5);
+    --transition: all 0.3s ease;
+    --shadow-light: rgba(0, 0, 0, 0.08);
+    --shadow-dark: rgba(0, 0, 0, 0.2);
+}
+
+body {
+    background-color: var(--background-light);
+    font-family: 'Poppins', sans-serif;
+    color: var(--text-dark);
+}
+
+.container-fluid {
+    padding-top: 30px;
+    padding-bottom: 30px;
+}
+
+.card {
+    border-radius: 1rem;
+    box-shadow: 0 8px 25px var(--shadow-light);
+    margin-bottom: 2rem;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 35px var(--shadow-dark);
+}
+
+.card-header {
+    background-color: var(--color3);
+    color: var(--text-light);
+    border-bottom: none;
+    border-top-left-radius: 1rem;
+    border-top-right-radius: 1rem;
+    padding: 1.2rem 2rem;
+    font-weight: 600;
+    font-size: 1.3rem;
+    letter-spacing: 0.5px;
+    position: relative;
+    overflow: hidden;
+}
+
+.card-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, var(--color2) 0%, var(--color3) 100%);
+    opacity: 0.8;
+    z-index: 0;
+}
+
+.card-header * {
+    position: relative;
+    z-index: 1;
+}
+
+.card-body {
+    padding: 2rem;
+}
+
+.table {
+    --bs-table-bg: var(--background-light);
+    --bs-table-hover-bg: rgba(var(--color4-rgb), 0.05); /* Requires color4-rgb, e.g., 3, 43, 75 */
+    border-radius: 0.8rem;
+    overflow: hidden;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.table thead th {
+    background-color: var(--color4);
+    color: var(--text-light);
+    font-weight: 600;
+    padding: 1rem 1.5rem;
+    border-bottom: none;
+    text-align: left;
+}
+
+.table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(var(--color4-rgb), 0.05);
+}
+
+.table th, .table td {
+    vertical-align: middle;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.table img {
+    max-width: 70px;
+    height: auto;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    border: 2px solid var(--color4);
+    transition: transform 0.3s ease;
+}
+
+.table img:hover {
+    transform: scale(1.05);
+}
+
+.action-buttons .btn {
+    margin-right: 0.75rem;
+    margin-bottom: 0.75rem;
+    border-radius: 0.5rem;
+    padding: 0.6rem 1.2rem;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+}
+
+/* Specific button styles for clarity and consistency */
+.action-buttons .btn-primary {
+    background-color: var(--color1);
+    border-color: var(--color1);
+    color: var(--text-light);
+}
+
+.action-buttons .btn-primary:hover {
+    background-color: var(--color2);
+    border-color: var(--color2);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.action-buttons .btn-info { /* Example for an 'edit' or 'view' button */
+    background-color: var(--color4);
+    border-color: var(--color4);
+    color: var(--text-light);
+}
+
+.action-buttons .btn-info:hover {
+    background-color: var(--color3);
+    border-color: var(--color3);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.action-buttons .btn-danger { /* Example for a 'delete' button */
+    background-color: #dc3545; /* Standard red, or define a new variable */
+    border-color: #dc3545;
+    color: var(--text-light);
+}
+
+.action-buttons .btn-danger:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
     </style>
 </head>
 <body>
