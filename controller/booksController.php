@@ -67,6 +67,7 @@ class booksController
     {
         $this->validateLogin(); // Primero verifica si está logueado
         if (!isset($_SESSION['is_admin']) || $_SESSION['is_admin'] !== true) {
+            error_log("Intento de acceso de no administrador a función admin: Usuario ID " . ($_SESSION['user_id'] ?? 'N/A'));
             throw new Exception("Acceso denegado. Permisos de administrador requeridos.");
         }
     }
@@ -88,6 +89,7 @@ class booksController
     private function validateCSRFToken($token)
     {
         if (!isset($_SESSION['csrf_token']) || $token !== $_SESSION['csrf_token']) {
+            error_log("Error CSRF: Token de sesión: " . ($_SESSION['csrf_token'] ?? 'N/A') . ", Token recibido: " . ($token ?? 'N/A'));
             return false;
         }
         unset($_SESSION['csrf_token']); // Consumir el token
@@ -271,7 +273,11 @@ class booksController
             $this->moveFilesToPublished($book); 
             
             // Actualizar el estado del libro a "publicado" y sus rutas en la BD
-            $this->bookModel->publishBook($bookId, $book['pdf_path'], $book['cover_image_path']); 
+            // ¡IMPORTANTE! Asegúrate de que publishBook en tu modelo bookModel actualice las rutas de los archivos también
+            // Si publishBook en books.php solo cambia 'publicado', deberás actualizarlo para recibir y guardar las nuevas rutas.
+            // Si no lo hace, las rutas en la DB seguirán apuntando a 'temp_uploads/'.
+            $this->bookModel->publishBook($bookId); // Asume que publishBook solo necesita el ID para cambiar el estado.
+                                                     // Si también necesita actualizar rutas de PDF/imagen, ajusta aquí y en el modelo.
             
             $this->showAlert('success', 'Libro publicado', 
                 "El libro '{$book['title']}' ha sido publicado exitosamente.");
@@ -293,9 +299,14 @@ class booksController
             $this->validateAdmin();
             
             $bookId = $this->getBookIdFromRequest();
-            $book = $this->getBookForPull($bookId); // Obtiene los datos del libro para poder borrar los archivos
+            $book = $this->bookModel->getBookById($bookId); // Obtiene los datos del libro para poder borrar los archivos
             
-            $this->deleteTemporaryFiles($book); // Elimina los archivos de temp_uploads
+            if (!$book) {
+                error_log("denyPull: Libro con ID {$bookId} no encontrado.");
+                throw new Exception("El libro a denegar no fue encontrado.");
+            }
+
+            $this->deleteBookFiles($book); // Elimina los archivos asociados al libro
             $this->bookModel->deleteBook($bookId); // Elimina el registro de la BD
             
             $this->showAlert('success', 'Solicitud denegada', 
@@ -310,6 +321,60 @@ class booksController
     }
 
     /**
+     * Elimina un libro del catálogo (solo para administradores).
+     * Esta acción elimina el libro de la base de datos y sus archivos asociados (PDF y portada).
+     */
+    public function delete()
+    {
+        error_log("booksController::delete() - Inicio de la función.");
+        try {
+            $this->validateAdmin(); // Valida que el usuario sea administrador
+            error_log("booksController::delete() - Usuario es administrador.");
+
+            // Validar token CSRF. Se espera que venga por GET en la URL.
+            $csrf_token = $_GET['csrf_token'] ?? '';
+            if (!$this->validateCSRFToken($csrf_token)) {
+                error_log("booksController::delete() - Error de validación CSRF.");
+                throw new Exception("Token CSRF inválido o ausente. Acción denegada.");
+            }
+            error_log("booksController::delete() - Token CSRF validado.");
+            
+            $bookId = $this->getBookIdFromRequest();
+            error_log("booksController::delete() - ID del libro a eliminar: " . $bookId);
+
+            $book = $this->bookModel->getBookById($bookId); // Obtiene los datos del libro
+            
+            if (!$book) {
+                error_log("booksController::delete() - Libro con ID {$bookId} no encontrado en la BD.");
+                throw new Exception("El libro a eliminar no fue encontrado.");
+            }
+            error_log("booksController::delete() - Datos del libro obtenidos: " . print_r($book, true));
+
+            // Elimina los archivos asociados al libro (PDF y portada)
+            $this->deleteBookFiles($book);
+            error_log("booksController::delete() - Archivos del libro eliminados (o no existían).");
+            
+            // Elimina el registro del libro de la base de datos
+            $deleteDbResult = $this->bookModel->deleteBook($bookId);
+            if (!$deleteDbResult) {
+                error_log("booksController::delete() - Fallo al eliminar el registro del libro de la BD. ID: {$bookId}");
+                throw new Exception("Error al eliminar el registro del libro de la base de datos.");
+            }
+            error_log("booksController::delete() - Registro del libro eliminado de la BD.");
+            
+            $this->showAlert('success', 'Libro eliminado', 
+                "El libro '{$book['title']}' ha sido eliminado del catálogo.");
+            $this->redirect('main'); // Redirige a la página principal después de la eliminación
+            
+        } catch (Exception $e) {
+            error_log("booksController::delete() - Error al eliminar libro: " . $e->getMessage());
+            $this->showAlert('error', 'Error al eliminar el libro', $e->getMessage());
+            $this->redirect('main');
+        }
+    }
+
+
+    /**
      * Obtiene y valida el ID del libro desde la request (GET o POST)
      */
     private function getBookIdFromRequest()
@@ -317,6 +382,7 @@ class booksController
         // Prioriza POST para acciones de formulario, luego GET para enlaces directos
         $bookId = (int)($_POST['book_id'] ?? $_GET['id'] ?? 0); 
         if ($bookId <= 0) {
+            error_log("getBookIdFromRequest: ID de libro inválido o ausente. ID: " . $bookId);
             throw new Exception("ID de libro inválido.");
         }
         return $bookId;
@@ -331,11 +397,13 @@ class booksController
         $book = $this->bookModel->getBookById($bookId); // Asume que getBookById devuelve un array asociativo
 
         if (!$book) {
+            error_log("getBookForPull: Solicitud con ID {$bookId} no encontrada.");
             throw new Exception("Solicitud no encontrada.");
         }
         
         // Asume que la columna 'publicado' es un string ('si'/'no')
         if ($book['publicado'] === 'si') { 
+            error_log("getBookForPull: Libro con ID {$bookId} ya está publicado. No se puede procesar como pull.");
             throw new Exception("Este libro ya está publicado.");
         }
         
@@ -351,6 +419,7 @@ class booksController
      */
     private function moveFilesToPublished(&$book) // Recibe $book por referencia para actualizar sus rutas
     {
+        error_log("moveFilesToPublished: Intentando mover archivos para libro ID " . $book['id']);
         // Mover PDF
         if (!empty($book['pdf_path']) && $book['pdf_path'] !== 'assets/temp_uploads/') { // Asegura que no esté vacío o solo el directorio
             $oldPdfPath = $book['pdf_path'];
@@ -359,12 +428,13 @@ class booksController
 
             if (file_exists($oldPdfPath) && rename($oldPdfPath, $newPdfPath)) {
                 $book['pdf_path'] = $newPdfPath; // Actualiza la ruta en el objeto $book
+                error_log("moveFilesToPublished: PDF movido de {$oldPdfPath} a {$newPdfPath}.");
             } else {
-                error_log("Error al mover PDF de {$oldPdfPath} a {$newPdfPath}. Existe: " . (file_exists($oldPdfPath) ? 'Sí' : 'No'));
+                error_log("moveFilesToPublished: ERROR al mover PDF de {$oldPdfPath} a {$newPdfPath}. Existe origen: " . (file_exists($oldPdfPath) ? 'Sí' : 'No') . ". Permisos de escritura en destino: " . (is_writable($this->publishedPdfDir) ? 'Sí' : 'No'));
                 throw new Exception("El archivo PDF no se encuentra o no se puede mover a la ubicación final.");
             }
         } else {
-            // Si no hay PDF válido en temp_uploads, lanzar un error
+            error_log("moveFilesToPublished: Ruta de PDF temporal inválida o vacía para libro ID " . $book['id']);
             throw new Exception("La ruta del archivo PDF temporal es inválida o no existe.");
         }
 
@@ -377,13 +447,42 @@ class booksController
 
             if (file_exists($oldCoverPath) && rename($oldCoverPath, $newCoverPath)) {
                 $book['cover_image_path'] = $newCoverPath; // Actualiza la ruta en el objeto $book
+                error_log("moveFilesToPublished: Portada movida de {$oldCoverPath} a {$newCoverPath}.");
             } else {
-                error_log("Error al mover portada de {$oldCoverPath} a {$newCoverPath}. Existe: " . (file_exists($oldCoverPath) ? 'Sí' : 'No'));
+                error_log("moveFilesToPublished: ERROR al mover portada de {$oldCoverPath} a {$newCoverPath}. Existe origen: " . (file_exists($oldCoverPath) ? 'Sí' : 'No') . ". Permisos de escritura en destino: " . (is_writable($this->publishedCoversDir) ? 'Sí' : 'No'));
                 throw new Exception("El archivo de portada no se encuentra o no se puede mover a la ubicación final.");
             }
+        } else {
+            error_log("moveFilesToPublished: Portada es la por defecto o ruta vacía para libro ID " . $book['id'] . ". No se mueve.");
         }
-        // Si es la portada por defecto, no hay nada que mover ni actualizar.
     }
+
+    /**
+     * Elimina los archivos asociados a un libro (PDF y portada).
+     * @param array $book Array con los datos del libro, incluyendo 'pdf_path' y 'image_path'.
+     */
+    private function deleteBookFiles(array $book)
+    {
+        error_log("deleteBookFiles: Intentando eliminar archivos para libro ID " . ($book['id'] ?? 'N/A'));
+        // Eliminar PDF
+        if (!empty($book['pdf_path']) && file_exists($book['pdf_path'])) {
+            $resultPdf = $this->deleteFile($book['pdf_path'], 'PDF');
+            error_log("deleteBookFiles: Resultado eliminación PDF ({$book['pdf_path']}): " . ($resultPdf ? 'Éxito' : 'Fallo'));
+        } else {
+            error_log("deleteBookFiles: Ruta de PDF vacía o archivo no encontrado: " . ($book['pdf_path'] ?? 'N/A'));
+        }
+        
+        // Eliminar imagen de portada, solo si no es la por defecto
+        if (!empty($book['image_path']) && 
+            $book['image_path'] !== $this->defaultCover && 
+            file_exists($book['image_path'])) {
+            $resultCover = $this->deleteFile($book['image_path'], 'portada');
+            error_log("deleteBookFiles: Resultado eliminación Portada ({$book['image_path']}): " . ($resultCover ? 'Éxito' : 'Fallo'));
+        } else {
+            error_log("deleteBookFiles: Portada es la por defecto o ruta vacía/archivo no encontrado: " . ($book['image_path'] ?? 'N/A'));
+        }
+    }
+
 
     /**
      * Elimina un archivo individual.
@@ -395,34 +494,18 @@ class booksController
      */
     private function deleteFile(string $filePath, string $fileType): bool
     {
+        error_log("deleteFile: Intentando eliminar {$fileType} en ruta: {$filePath}");
         if (file_exists($filePath)) {
             if (unlink($filePath)) {
+                error_log("deleteFile: Éxito al eliminar {$fileType}: {$filePath}.");
                 return true;
             } else {
-                error_log("Error al eliminar {$fileType}: {$filePath}. Permiso denegado.");
+                error_log("deleteFile: ERROR al eliminar {$fileType}: {$filePath}. Permiso denegado o error desconocido. Verifique permisos.");
                 return false;
             }
         }
-        // No es un error si el archivo ya no existe (ej: ya se movió o eliminó previamente)
-        return true; 
-    }
-
-    /**
-     * Elimina archivos temporales asociados a un libro (usado en denyPull o si falla upload).
-     */
-    private function deleteTemporaryFiles($book)
-    {
-        // Asegúrate de que las claves existen y que las rutas no sean la default_cover si es que la portada es la misma que la default_cover
-        if (!empty($book['pdf_path']) && file_exists($book['pdf_path'])) {
-            $this->deleteFile($book['pdf_path'], 'PDF temporal');
-        }
-        
-        // Solo elimina la imagen si no es la por defecto y si existe
-        if (!empty($book['cover_image_path']) && 
-            $book['cover_image_path'] !== $this->defaultCover && 
-            file_exists($book['cover_image_path'])) {
-            $this->deleteFile($book['cover_image_path'], 'portada temporal');
-        }
+        error_log("deleteFile: Archivo {$fileType} no existe en ruta: {$filePath}.");
+        return true; // No es un error si el archivo ya no existe
     }
 
     /**
@@ -431,14 +514,17 @@ class booksController
      */
     private function deleteFilesOnError(array $uploads)
     {
+        error_log("deleteFilesOnError: Iniciando limpieza de archivos temporales.");
         if (isset($uploads['pdf_path']) && file_exists($uploads['pdf_path'])) {
-            unlink($uploads['pdf_path']);
+            $result = unlink($uploads['pdf_path']);
+            error_log("deleteFilesOnError: Eliminación de PDF temporal ({$uploads['pdf_path']}): " . ($result ? 'Éxito' : 'Fallo'));
         }
         // Solo elimina la imagen si no es la por defecto
         if (isset($uploads['cover_image_path']) && 
             $uploads['cover_image_path'] !== $this->defaultCover && 
             file_exists($uploads['cover_image_path'])) {
-            unlink($uploads['cover_image_path']);
+            $result = unlink($uploads['cover_image_path']);
+            error_log("deleteFilesOnError: Eliminación de portada temporal ({$uploads['cover_image_path']}): " . ($result ? 'Éxito' : 'Fallo'));
         }
     }
 
@@ -457,6 +543,7 @@ class booksController
         $viewPath = __DIR__ . '/../view/books/' . $viewName . '.php'; // Ruta completa a la vista
         
         if (!file_exists($viewPath)) {
+            error_log("Render Error: Vista '{$viewName}.php' no encontrada en '{$viewPath}'");
             throw new Exception("Vista '{$viewName}.php' no encontrada en '{$viewPath}'");
         }
         
@@ -473,6 +560,7 @@ class booksController
             'title' => $title,
             'text' => $text
         ];
+        error_log("showAlert: Tipo: {$type}, Título: {$title}, Texto: {$text}");
     }
 
     /**
@@ -484,6 +572,7 @@ class booksController
         if ($action !== 'index') {
             $location .= "&a={$action}";
         }
+        error_log("Redirecting to: {$location}");
         header("Location: {$location}");
         exit();
     }

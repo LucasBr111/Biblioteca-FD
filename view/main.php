@@ -421,6 +421,7 @@ $username = $isLoggedIn ? htmlspecialchars($_SESSION['username'] ?? 'Usuario') :
     </div>
 </section>
 
+
     <section id="libros" class="books-section py-5">
         <div class="container">
             <h2 class="text-center mb-5 animate_animated animate_fadeInDown">Nuestro Catálogo</h2>
@@ -436,7 +437,6 @@ $username = $isLoggedIn ? htmlspecialchars($_SESSION['username'] ?? 'Usuario') :
         </div>
     </section>
 </main>
-   
 
     <footer class="py-5">
         <div class="container">
@@ -482,6 +482,12 @@ $username = $isLoggedIn ? htmlspecialchars($_SESSION['username'] ?? 'Usuario') :
                         <a id="modalDownloadButton" class="btn btn-secondary me-2" style="display: none; ">
                             <i class="fas fa-download me-2"></i>Descargar PDF
                         </a>
+                        <?php if ($userAdmin): ?>
+                            <!-- Cambié el ID del botón para ser más específico -->
+                            <button id="deleteBookButton" class="btn btn-danger me-2" style="display: none;">
+                                <i class="fas fa-trash-alt me-2"></i>Eliminar Libro
+                            </button>
+                        <?php endif; ?>
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
                     </div>
                 </div>
@@ -629,15 +635,29 @@ $username = $isLoggedIn ? htmlspecialchars($_SESSION['username'] ?? 'Usuario') :
         const sortOrderSelect = document.getElementById('sort_order');
         const searchButton = document.getElementById('searchButton');
         const applyFiltersButton = document.getElementById('applyFiltersButton');
+        // Obtener el botón de eliminar del modal
+        const deleteBookButton = document.getElementById('deleteBookButton');
 
 
         document.addEventListener('DOMContentLoaded', function() {
             // Inicializa allBooks con los datos de PHP solo una vez
             // Asegúrate de que $libros sea un array JSON válido
-            allBooks = <?php echo json_encode($libros); ?>;
+            allBooks = <?php echo json_encode($libros); ?>.map(book => {
+                // Ajusta la ruta del PDF si es necesario (lógica PHP original)
+                let displayPdfPath = book.pdf_path;
+                if (displayPdfPath && displayPdfPath.includes('assets/temp_uploads/')) {
+                    displayPdfPath = displayPdfPath.replace('assets/temp_uploads/', 'assets/books/');
+                }
+                // Retorna un nuevo objeto con las propiedades renombradas a 'pdf' y 'summary'
+                return {
+                    ...book, // Copia todas las propiedades existentes
+                    pdf: displayPdfPath, // Renombra pdf_path a pdf
+                    summary: book.url_resumen // Renombra url_resumen a summary
+                };
+            });
             
             // *** IMPORTANTE PARA LA DEPURACIÓN ***
-            console.log("Contenido inicial de allBooks (desde PHP):", allBooks);
+            console.log("Contenido inicial de allBooks (desde PHP y mapeado):", allBooks);
 
             // Renderiza y aplica filtros/ordenamiento inicial
             // (Esto asegura que los libros se muestren al cargar, y aplica cualquier orden por defecto)
@@ -734,6 +754,61 @@ $username = $isLoggedIn ? htmlspecialchars($_SESSION['username'] ?? 'Usuario') :
                 }, 2000);
             }
             window.copyToClipboard = copyToClipboard;
+
+            // Manejo del botón Eliminar dentro del modal de detalles del libro
+            if (deleteBookButton) { // Asegúrate de que el botón exista (solo para admin)
+                deleteBookButton.addEventListener('click', function() {
+                    // Obtener el ID del libro del elemento modalBookTitle
+                    const bookId = document.getElementById('modalBookTitle').dataset.id;
+                    
+                    console.log("Intento de eliminar libro con ID:", bookId); // Depuración
+
+                    if (!bookId) {
+                        Swal.fire('Error', 'No se pudo obtener el ID del libro para eliminar.', 'error');
+                        console.error("ID del libro no encontrado en modalBookTitle.dataset.id");
+                        return;
+                    }
+
+                    Swal.fire({
+                        title: '¿Estás seguro?',
+                        text: "¡No podrás revertir esto! Se eliminará el libro y sus archivos asociados.",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#d33',
+                        cancelButtonColor: '#3085d6',
+                        confirmButtonText: 'Sí, eliminarlo!',
+                        cancelButtonText: 'Cancelar'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            // Enviar solicitud de eliminación al controlador
+                            const deleteUrl = `index.php?c=books&a=delete&id=${bookId}&csrf_token=<?php echo htmlspecialchars($_SESSION['csrf_token'] ?? ''); ?>`;
+                            console.log("Redirigiendo a:", deleteUrl); // Depuración
+                            window.location.href = deleteUrl;
+                        }
+                    });
+                });
+            }
+
+
+            // Añadir un listener al evento 'shown.bs.modal' del modal de detalles del libro
+            const bookDetailModal = document.getElementById('bookDetailModal');
+            bookDetailModal.addEventListener('shown.bs.modal', function () {
+                // La visibilidad del botón de eliminar ya la maneja PHP condicionalmente.
+                // Si el botón existe, simplemente lo mostramos para asegurarnos si está oculto por CSS.
+                // Sin embargo, si PHP ya no lo renderiza para no-admins, este bloque no hará nada para ellos.
+                <?php if ($userAdmin): ?>
+                    if (deleteBookButton) {
+                        deleteBookButton.style.display = 'inline-block';
+                    }
+                <?php endif; ?>
+            });
+
+            bookDetailModal.addEventListener('hidden.bs.modal', function () {
+                // No necesitamos una clase 'active-modal-card' si obtenemos el ID del título del modal.
+                // Puedes quitar la lógica de 'active-modal-card' si ya no la usas para nada más.
+                // Si el botón de eliminar tiene display:block por defecto, podrías ocultarlo aquí si es necesario.
+            });
+
         });
 
         /**
@@ -753,6 +828,11 @@ $username = $isLoggedIn ? htmlspecialchars($_SESSION['username'] ?? 'Usuario') :
             }
 
             booksToRender.forEach(book => {
+                // Ensure PDF path handles the 'assets/temp_uploads/' to 'assets/books/' conversion
+                let displayPdfPath = book.pdf;
+                // Note: The conversion logic should ideally happen once when 'allBooks' is initialized
+                // to avoid redundant processing, but kept here for clarity if data varies.
+
                 const bookCardHtml = `
                     <div class="book-card-wrapper">
                         <div class="card h-100 book-card animate_animated animate_fadeIn"
@@ -763,7 +843,7 @@ $username = $isLoggedIn ? htmlspecialchars($_SESSION['username'] ?? 'Usuario') :
                             data-genre="${book.genre}"
                             data-description="${book.description}"
                             data-image="${book.image_path}"
-                            data-pdf="${book.pdf}"
+                            data-pdf="${displayPdfPath}"
                             data-summary="${book.summary}">
                             <img src="${book.image_path}" class="card-img-top book-image" alt="Portada de ${book.title}">
                             <div class="card-body d-flex flex-column">

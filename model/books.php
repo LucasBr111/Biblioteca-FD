@@ -1,6 +1,4 @@
 <?php
-
-
 class books
 {
     private $pdo;
@@ -94,7 +92,6 @@ class books
      *
      * @return array Una lista de libros.
      */
-
     public function getAllPublishedBooks()
     {
         try {
