@@ -19,7 +19,7 @@
 * {
     margin: 0;
     padding: 0;
-    box-sizing: border-box;
+    box-sizing: border-box; /* Asegura que padding y border se incluyan en el ancho/alto */
 }
 
 body {
@@ -164,13 +164,13 @@ body {
 }
 
 
-/* --- Main Content - Padding superior se ajusta si el header es fijo --- */
+/* --- Contenido Principal - El padding superior se ajusta si el header es fijo --- */
 main {
     padding-top: 80px; /* Ajuste para un header un poco más compacto */
     min-height: calc(100vh - 80px);
 }
 
-/* --- Hero Section - Mejoras visuales --- */
+/* --- Sección Hero - Mejoras visuales --- */
 .hero {
     background: linear-gradient(rgba(3, 43, 75, 0.85), rgba(0, 28, 59, 0.95)), url('../assets/img/hero.jpg');
     background-size: cover;
@@ -283,7 +283,7 @@ main {
     gap: 3rem; /* Mayor espacio entre tarjetas para móviles */
     justify-content: center;
     padding: 0 15px; /* Padding para que no toque los bordes en móviles */
-   
+
 }
 
 .book-card {
@@ -507,6 +507,32 @@ footer {
     padding: 1.5rem; /* Más padding */
 }
 
+/* Estilos para TODOS los botones dentro del modal footer */
+.modal-footer .btn {
+    font-size: 1rem; /* Tamaño de fuente base para todos los botones del footer */
+    padding: 0.7rem 1.2rem; /* Padding base para todos los botones del footer */
+    border-radius: 8px; /* Bordes suaves para todos */
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2); /* Sombra para todos */
+    transition: all 0.3s ease; /* Transición para efectos de hover */
+}
+
+.modal-footer .btn:hover {
+    transform: translateY(-2px); /* Efecto de elevación consistente para todos */
+}
+
+/* Estilos específicos para btn-primary en el modal footer */
+.modal-footer .btn-primary {
+    background-color: var(--color1);
+    border-color: var(--color1);
+    color: white; /* Asegura que el texto sea blanco */
+}
+
+.modal-footer .btn-primary:hover {
+    background-color: var(--color2);
+    border-color: var(--color2);
+}
+
+/* Estilos para btn-secondary en el modal footer (ya existentes y mejorados) */
 .modal-footer .btn-secondary {
     background-color: var(--color4);
     border-color: var(--color4);
@@ -515,22 +541,136 @@ footer {
 .modal-footer .btn-secondary:hover {
     background-color: var(--color5);
     border-color: var(--color5);
-    transform: translateY(-2px);
 }
 
-/* --- Responsive Media Queries --- */
+/* Estilos específicos para btn-danger en el modal footer */
+.modal-footer .btn-danger {
+    background-color: #dc3545; /* Rojo estándar para peligro */
+    border-color: #dc3545;
+    color: white; /* Asegura que el texto sea blanco */
+}
+
+.modal-footer .btn-danger:hover {
+    background-color: #c82333; /* Rojo más oscuro en hover */
+    border-color: #bd2130;
+}
+
+.modal-footer #modalFooter {
+    display: flex;
+    flex-direction: row; /* Horizontal en desktop */
+    gap: 0.5rem;
+    justify-content: flex-end;
+    align-items: center;
+    width: 100%;
+    padding: 0 0.5rem;
+    flex-wrap: nowrap; /* No permitir wrap en desktop */
+}
+
+.modal-footer #modalFooter .btn {
+    flex-grow: 0;
+    flex-shrink: 1; /* Reducido para mejor control */
+    white-space: nowrap;
+    font-size: 0.8rem;
+    padding: 0.4rem 0.6rem;
+    box-sizing: border-box;
+    min-width: fit-content; /* Mejor que un valor fijo */
+}
+
+/* Tablets y pantallas medianas */
+@media (max-width: 768px) {
+    .modal-footer #modalFooter {
+        justify-content: center;
+        gap: 0.4rem;
+    }
+    
+    .modal-footer #modalFooter .btn {
+        font-size: 0.75rem;
+        padding: 0.35rem 0.5rem;
+    }
+}
+
+/* Móviles - Cambio a diseño vertical */
+@media (max-width: 576px) {
+    .modal-footer #modalFooter {
+        flex-direction: column; /* CLAVE: Cambiar a columna */
+        justify-content: center;
+        align-items: stretch; /* Los botones ocupan todo el ancho disponible */
+        gap: 0.3rem;
+        padding: 0.5rem;
+    }
+
+    .modal-footer #modalFooter .btn {
+        width: 100%; /* Botones de ancho completo */
+        flex-shrink: 0; /* No encoger en layout vertical */
+        font-size: 0.8rem; /* Tamaño legible */
+        padding: 0.5rem 0.6rem; /* Padding cómodo para touch */
+        min-width: auto; /* Resetear min-width */
+        text-align: center; /* Centrar texto */
+    }
+}
+
+/* Móviles muy pequeños */
+@media (max-width: 400px) {
+    .modal-footer #modalFooter {
+        padding: 0.4rem;
+        gap: 0.25rem;
+    }
+    
+    .modal-footer #modalFooter .btn {
+        font-size: 0.75rem;
+        padding: 0.45rem 0.5rem;
+    }
+}
+
+/* Variante alternativa: Botones en grid 2x2 para móviles si tienes exactamente 4 botones */
+@media (max-width: 576px) {
+    .modal-footer #modalFooter.grid-layout {
+        display: grid;
+        grid-template-columns: 1fr 1fr; /* 2 columnas iguales */
+        gap: 0.3rem;
+        padding: 0.5rem;
+    }
+    
+    .modal-footer #modalFooter.grid-layout .btn {
+        width: auto; /* Resetear width para grid */
+    }
+}
+
+/* Si quieres mantener algunos botones más importantes visibles horizontalmente */
+@media (max-width: 576px) {
+    .modal-footer #modalFooter.hybrid-layout {
+        flex-direction: column;
+        gap: 0.3rem;
+    }
+    
+    .modal-footer #modalFooter.hybrid-layout .btn-group {
+        display: flex;
+        flex-direction: row;
+        gap: 0.3rem;
+        width: 100%;
+    }
+    
+    .modal-footer #modalFooter.hybrid-layout .btn-group .btn {
+        flex: 1; /* Dividir espacio equitativamente */
+        width: auto;
+    }
+    
+    .modal-footer #modalFooter.hybrid-layout .btn-full {
+        width: 100%; /* Botón que ocupa toda la fila */
+    }
+}
+
+/* --- Media Queries Responsivas --- */
 
 /* Esconde el navbar collapse por defecto en pantallas grandes y ajusta el offcanvas */
 @media (min-width: 992px) {
     .navbar-expand-lg .navbar-collapse {
-        display: flex !important; /* Asegura que se muestre en desktop */
+        display: flex; /* Asegura que se muestre en desktop */
         width: auto;
     }
-    .offcanvas-lg { /* Oculta el offcanvas en pantallas grandes si se usa */
-        visibility: hidden !important;
-    }
+    /* Si no usas offcanvas en desktop, puedes ocultar su botón si existe */
     .navbar-toggler {
-        display: none !important; /* Oculta el botón hamburguesa en desktop */
+        display: none; /* Oculta el botón hamburguesa en desktop */
     }
      .navbar-nav .nav-link::after {
         content: '';
@@ -573,22 +713,19 @@ footer {
         justify-content: center; /* Centra el contenido del botón en desktop */
     }
 
+    /* Márgenes para los botones del modal en desktop (si los deseas) */
+    .modal-footer #modalFooter .btn {
+        margin-right: 0.5rem; /* Margen a la derecha entre botones */
+    }
+    .modal-footer #modalFooter .btn:last-child {
+        margin-right: 0; /* Sin margen a la derecha en el último botón */
+    }
+
 }
 
 @media (max-width: 991.98px) { /* breakpoint para móviles y tablets */
-    .navbar-collapse { /* Este div ya no es el que contiene el menú en móvil */
-        display: none !important; /* Oculta la versión de desktop del menú */
-    }
-    .navbar-toggler {
-        display: block; /* Muestra el botón hamburguesa */
-        order: 1; /* Coloca el toggler a la derecha del logo si es necesario */
-    }
-    .navbar-brand {
-        margin-right: auto; /* Empuja el brand a la izquierda */
-    }
-
-    /* Asegura que el offcanvas tenga su propia lógica para el menú */
-    /* Los estilos para .offcanvas ya están arriba */
+    /* Asegúrate de que el offcanvas sea el método de navegación principal aquí */
+    /* Si tenías un .navbar-collapse, asegúrate de que esté oculto aquí */
 
     .hero {
         height: 500px; /* Ajuste para pantallas de tablet */
@@ -635,13 +772,17 @@ footer {
 
     .book-actions {
         flex-direction: column; /* Apila los botones verticalmente */
-        align-items: center; /* Centra los botones apilados */
+        align-items: stretch; /* Centra los botones apilados */
         gap: 0.8rem;
+        width: 100%;
     }
 
     .book-actions .btn {
-        width: 90%; /* Los botones ocupan más ancho */
-        max-width: 300px; /* Limita su ancho */
+        width: 100%;
+        max-width: none;
+        min-width: 0;
+        box-sizing: border-box;
+        margin: 0;
     }
 
     .modal-header {
@@ -668,9 +809,29 @@ footer {
     .modal-body p {
         font-size: 1rem;
     }
+
+    /* REGLAS ajustadas para botones del modal en móviles */
+    .modal-footer #modalFooter {
+        flex-direction: column; /* Apila los botones verticalmente */
+        align-items: center; /* Centra los botones apilados horizontalmente */
+        justify-content: center; /* Centra los botones apilados verticalmente */
+        gap: 0.8rem; /* Espacio entre los botones apilados */
+        padding: 0 1rem; /* Añade padding horizontal al contenedor flex */
+        width: 100%; /* Asegura que ocupe todo el ancho disponible */
+        display: flex; /* Asegura que es un contenedor flex */
+    }
+
+    .modal-footer .btn {
+        width: 100%; /* Los botones ocupan todo el ancho disponible del contenedor */
+        max-width: 280px; /* Limita el ancho máximo para que no sean demasiado grandes en tablets */
+        font-size: 0.9rem; /* Reduce el tamaño de fuente */
+        padding: 0.6rem 1rem; /* Reduce el padding para botones más compactos */
+        margin-right: 0; /* Eliminar el margen derecho */
+        margin-left: 0; /* Eliminar el margen izquierdo */
+    }
 }
 
-@media (max-width: 767.98px) { /* Smaler mobile devices */
+@media (max-width: 767.98px) { /* Dispositivos móviles más pequeños */
     .hero {
         height: 450px;
     }
@@ -717,6 +878,20 @@ footer {
     }
     .footer-info:last-child {
         margin-bottom: 0;
+    }
+
+    /* REGLAS para botones del modal en móviles muy pequeños */
+    .modal-footer #modalFooter {
+        padding: 0 0.8rem; /* Ajustar padding para pantallas más pequeñas si es necesario */
+    }
+    .modal-footer .btn {
+        max-width: 220px; /* Aun más pequeños en móviles muy compactos */
+        font-size: 0.85rem; /* Fuente aún más pequeña */
+        padding: 0.5rem 0.8rem; /* Padding aún más reducido */
+    }
+    .book-actions .btn {
+        font-size: 0.95rem;
+        padding: 0.7rem 1rem;
     }
 }
 

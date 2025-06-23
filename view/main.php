@@ -39,7 +39,7 @@ $username = $isLoggedIn ? htmlspecialchars($_SESSION['username'] ?? 'Usuario') :
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.12.2/dist/sweetalert2.min.css">
 
     <link rel="stylesheet" href="css/style.css">
-    <style>
+<style>
         /* Estilos adicionales para el dropdown de usuario en el offcanvas */
         .user-dropdown {
             padding: 0.75rem 1rem;
