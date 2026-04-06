@@ -10,7 +10,8 @@ class accountController
 
     public function __construct()
     {
-        if (session_status() === PHP_SESSION_NONE) session_start();
+        if (session_status() === PHP_SESSION_NONE)
+            session_start();
         $this->userModel = new users();
     }
 
@@ -22,7 +23,8 @@ class accountController
     private function redirect(string $controller, string $action = 'index'): void
     {
         $url = "index.php?c={$controller}";
-        if ($action !== 'index') $url .= "&a={$action}";
+        if ($action !== 'index')
+            $url .= "&a={$action}";
         header("Location: {$url}");
         exit();
     }
@@ -31,7 +33,8 @@ class accountController
     {
         extract($data);
         $path = __DIR__ . '/../view/account/' . $view . '.php';
-        if (!file_exists($path)) die("Vista no encontrada: {$view}");
+        if (!file_exists($path))
+            die("Vista no encontrada: {$view}");
         include $path;
     }
 
@@ -58,7 +61,7 @@ class accountController
         }
 
         $identifier = trim($_POST['username_or_email'] ?? '');
-        $password   = $_POST['password'] ?? '';
+        $password = $_POST['password'] ?? '';
 
         if (!$identifier || !$password) {
             $this->alert('warning', 'Por favor, ingresá tu usuario y contraseña.');
@@ -75,7 +78,7 @@ class accountController
 
         // Iniciar sesión
         session_regenerate_id(true);
-        $_SESSION['user_id']  = $user['id'];
+        $_SESSION['user_id'] = $user['id'];
         $_SESSION['username'] = $user['username'];
         $_SESSION['is_admin'] = (bool)$user['is_admin'];
 
@@ -104,9 +107,9 @@ class accountController
         }
 
         $username = trim($_POST['username'] ?? '');
-        $email    = trim($_POST['email'] ?? '');
+        $email = trim($_POST['email'] ?? '');
         $password = $_POST['password'] ?? '';
-        $confirm  = $_POST['confirm_password'] ?? '';
+        $confirm = $_POST['confirm_password'] ?? '';
 
         // 1. Validación de campos vacíos
         if (!$username || !$email || !$password || !$confirm) {
@@ -140,7 +143,7 @@ class accountController
 
         try {
             $userId = $this->userModel->create($username, $email, $password);
-            
+
             if (!$userId) {
                 $this->alert('error', 'No se pudo generar tu cuenta. Intenta de nuevo más tarde.');
                 $this->redirect('account', 'registerForm');
@@ -150,25 +153,54 @@ class accountController
             $user = $this->userModel->login($username, $password);
             if ($user) {
                 session_regenerate_id(true);
-                $_SESSION['user_id']  = $user['id'];
+                $_SESSION['user_id'] = $user['id'];
                 $_SESSION['username'] = $user['username'];
                 $_SESSION['is_admin'] = (bool)$user['is_admin'];
-                
+
                 $this->alert('success', '¡Cuenta creada con éxito! Bienvenido, ' . htmlspecialchars($user['username']) . '.');
                 $this->redirect('main');
-            } else {
-                 $this->alert('success', '¡Cuenta creada con éxito! Por favor inicia sesión.');
-                 $this->redirect('account', 'loginForm');
+            }
+            else {
+                $this->alert('success', '¡Cuenta creada con éxito! Por favor inicia sesión.');
+                $this->redirect('account', 'loginForm');
             }
 
-        } catch (RuntimeException $e) {
+        }
+        catch (RuntimeException $e) {
             // AQUI ESTÁ LA MAGIA: Pasamos el mensaje exacto del modelo ("El usuario o email ya existe.")
             $this->alert('error', $e->getMessage());
             $this->redirect('account', 'registerForm');
-        } catch (Exception $e) {
+        }
+        catch (Exception $e) {
             $this->alert('error', 'Error del servidor. Por favor, intenta más tarde.');
             $this->redirect('account', 'registerForm');
         }
+    }
+
+    /**
+     * Panel de administrador mejorado
+     */
+    public function adminDashboard(): void
+    {
+        if (empty($_SESSION['is_admin'])) {
+            $this->alert('error', 'Acceso denegado. Se requieren permisos de administrador.');
+            $this->redirect('main');
+        }
+
+        require_once 'model/books.php';
+        $bookModel = new books();
+
+        $stats = $bookModel->getGeneralStats();
+        $allBooks = $bookModel->getAllBooksAdmin();
+        $allUsers = $this->userModel->getAllUsersWithStats();
+
+    
+
+        $this->render('admin_dashboard', [
+            'stats' => $stats,
+            'books' => $allBooks,
+            'users' => $allUsers
+        ]);
     }
 
     /**

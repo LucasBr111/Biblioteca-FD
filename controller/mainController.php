@@ -13,7 +13,9 @@ class mainController {
     }
 
     public function index() {
-        $libros =  $this->books->getAllPublishedBooks();
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        $userId = $_SESSION['user_id'] ?? null;
+        $libros =  $this->books->getAllPublishedBooks($userId);
         require_once "view/main.php";
     }
 }

@@ -46,6 +46,11 @@ $userId     = $_SESSION['user_id'] ?? null;
     </li>
     <?php if ($isAdmin): ?>
     <li>
+      <a href="index.php?c=account&a=adminDashboard" class="btn-nav-warn btn">
+        <i class="fa-solid fa-chart-line"></i> Dashboard
+      </a>
+    </li>
+    <li>
       <a href="index.php?c=books&a=managePulls" class="btn-nav-warn btn">
         <i class="fa-solid fa-list-check"></i> Peticiones
       </a>
@@ -65,6 +70,7 @@ $userId     = $_SESSION['user_id'] ?? null;
             <strong><?= $username ?></strong>
             <?php if ($isAdmin): ?><span class="badge badge-admin"><i class="fa-solid fa-star"></i> Admin</span><?php endif; ?>
           </div>
+          <a href="index.php?c=books&a=favorites"><i class="fa-solid fa-heart" style="color:var(--danger)"></i> Mis favoritos</a>
           <a href="index.php?c=account&a=logout"><i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión</a>
         </div>
       </div>
@@ -106,10 +112,14 @@ $userId     = $_SESSION['user_id'] ?? null;
 
   <a class="drawer-link active" href="index.php?c=main"><i class="fa-solid fa-house"></i> Inicio</a>
   <a class="drawer-link" href="#catalogo" onclick="toggleDrawer()"><i class="fa-solid fa-book-open"></i> Catálogo</a>
+  <?php if ($isLoggedIn): ?>
+  <a class="drawer-link" href="index.php?c=books&a=favorites"><i class="fa-solid fa-heart"></i> Mis favoritos</a>
+  <?php endif; ?>
   <button class="drawer-link" onclick="toggleDrawer();openModal('summaryModal')"><i class="fa-solid fa-wand-magic-sparkles"></i> Crear Resumen</button>
   <button class="drawer-link" onclick="toggleDrawer();handleUploadClick()"><i class="fa-solid fa-upload"></i> Cargar Libro</button>
   <?php if ($isAdmin): ?>
   <div class="drawer-divider"></div>
+  <a class="drawer-link" href="index.php?c=account&a=adminDashboard"><i class="fa-solid fa-chart-line"></i> Dashboard Admin</a>
   <a class="drawer-link" href="index.php?c=books&a=managePulls"><i class="fa-solid fa-list-check"></i> Ver Peticiones</a>
   <?php endif; ?>
 
@@ -147,9 +157,9 @@ $userId     = $_SESSION['user_id'] ?? null;
   </a>
   <?php endif; ?>
   <?php if ($isAdmin): ?>
-  <a href="index.php?c=books&a=managePulls" class="bottom-nav-item">
-    <i class="fa-solid fa-list-check"></i>
-    <span>Revisión</span>
+  <a href="index.php?c=account&a=adminDashboard" class="bottom-nav-item">
+    <i class="fa-solid fa-chart-line"></i>
+    <span>Admin</span>
   </a>
   <?php else: ?>
   <a href="#" class="bottom-nav-item" id="bottomMenuBtn" onclick="toggleDrawer();return false">

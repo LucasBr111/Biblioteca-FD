@@ -79,7 +79,101 @@ class books
         }
     }
 
+    /**
+     * Obtiene los libros favoritos (likeados) por un usuario.
+     */
+    public function getFavoritesBooks(int $userId): array
+    {
+        try {
+            $sql = "
+                SELECT b.*,
+                       COUNT(DISTINCT l2.id) AS likes,
+                       MAX(u.email) AS uploader_email,
+                       MAX(u.username) AS uploader_username,
+                       1 AS user_liked
+                FROM books b
+                INNER JOIN likes l ON l.book_id = b.id AND l.user_id = :uid
+                LEFT JOIN likes l2 ON l2.book_id = b.id
+                LEFT JOIN users u ON b.uploaded_by = u.id
+                WHERE b.publicado = 'si'
+                GROUP BY b.id
+                ORDER BY b.id DESC
+            ";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->bindValue(':uid', $userId, PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("getFavoritesBooks: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Retorna estadísticas generales del sistema.
+     */
+    public function getGeneralStats(): array
+    {
+        try {
+            $stats = [];
+            $stats['total_users'] = (int)$this->pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
+            $stats['total_books'] = (int)$this->pdo->query("SELECT COUNT(*) FROM books")->fetchColumn();
+            $stats['total_likes'] = (int)$this->pdo->query("SELECT COUNT(*) FROM likes")->fetchColumn();
+            return $stats;
+        } catch (PDOException $e) {
+            error_log("getGeneralStats: " . $e->getMessage());
+            return ['total_users' => 0, 'total_books' => 0, 'total_likes' => 0];
+        }
+    }
+
+    /**
+     * Retorna TODOS los libros (publicados o no) para el panel de admin
+     */
+    public function getAllBooksAdmin(): array
+    {
+        try {
+            $sql = "
+                SELECT b.*,
+                       COUNT(DISTINCT l.id) AS likes,
+                       MAX(u.email) AS uploader_email,
+                       MAX(u.username) AS uploader_username
+                FROM books b
+                LEFT JOIN likes l ON l.book_id = b.id
+                LEFT JOIN users u ON b.uploaded_by = u.id
+                GROUP BY b.id
+                ORDER BY b.id DESC
+            ";
+            $stmt = $this->pdo->query($sql);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("getAllBooksAdmin: " . $e->getMessage());
+            return [];
+        }
+    }
+
     // ── Writes ────────────────────────────────────────────────
+
+    /**
+     * Actualiza los datos principales de un libro.
+     */
+    public function updateBook(int $id, array $data): bool
+    {
+        try {
+            $sql = "UPDATE books SET title = ?, author = ?, year = ?, genre = ?, description = ? WHERE id = ?";
+            $stmt = $this->pdo->prepare($sql);
+            return $stmt->execute([
+                $data['title'],
+                $data['author'],
+                $data['year'],
+                $data['genre'],
+                $data['description'],
+                $id
+            ]);
+        } catch (PDOException $e) {
+            error_log("updateBook: " . $e->getMessage());
+            return false;
+        }
+    }
 
     /**
      * Inserta un libro con publicado = 'no'.

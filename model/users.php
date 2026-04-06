@@ -16,7 +16,7 @@ class users
      *
      * @return array|false Datos del usuario (sin password) o false.
      */
-    public function login(string $identifier, string $password): array|false
+    public function login(string $identifier, string $password): array |false
     {
         try {
             $stmt = $this->pdo->prepare(
@@ -28,13 +28,16 @@ class users
             $stmt->execute([$identifier, $identifier]);
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            if (!$user) return false;
-            if ($user['password'] !== $password) return false;
+            if (!$user)
+                return false;
+            if ($user['password'] !== $password)
+                return false;
 
             unset($user['password']);
             return $user;
 
-        } catch (PDOException $e) {
+        }
+        catch (PDOException $e) {
             error_log("users::login — " . $e->getMessage());
             return false;
         }
@@ -43,7 +46,7 @@ class users
     /**
      * Obtiene un usuario por ID (sin password).
      */
-    public function getUserById(int $id): array|false
+    public function getUserById(int $id): array |false
     {
         try {
             $stmt = $this->pdo->prepare(
@@ -51,7 +54,8 @@ class users
             );
             $stmt->execute([$id]);
             return $stmt->fetch(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
+        }
+        catch (PDOException $e) {
             error_log("users::getUserById — " . $e->getMessage());
             return false;
         }
@@ -69,13 +73,15 @@ class users
             $stmt->execute([
                 htmlspecialchars(strip_tags($username)),
                 htmlspecialchars(strip_tags($email)),
-                $password,   // texto plano — sin hash
+                $password, // texto plano — sin hash
                 $isAdmin ? 1 : 0,
             ]);
             return (int)$this->pdo->lastInsertId();
-        } catch (PDOException $e) {
+        }
+        catch (PDOException $e) {
             error_log("users::create — " . $e->getMessage());
-            if ($e->getCode() == 23000) throw new RuntimeException('El usuario o email ya existe.');
+            if ($e->getCode() == 23000)
+                throw new RuntimeException('El usuario o email ya existe.');
             return false;
         }
     }
@@ -88,7 +94,8 @@ class users
         try {
             $stmt = $this->pdo->prepare("DELETE FROM users WHERE id = ?");
             return $stmt->execute([$id]);
-        } catch (PDOException $e) {
+        }
+        catch (PDOException $e) {
             error_log("users::delete — " . $e->getMessage());
             return false;
         }
@@ -105,8 +112,38 @@ class users
             );
             $stmt->execute();
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
+        }
+        catch (PDOException $e) {
             error_log("users::getAll — " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Lista a todos los usuarios con la cantidad de libros subidos y total de likes recibidos.
+     */
+    public function getAllUsersWithStats(): array
+    {
+        try {
+            $sql = "
+SELECT 
+    u.id, 
+    u.username, 
+    u.email, 
+    u.is_admin,
+    COUNT(DISTINCT b.id) AS books_count,
+    COUNT(l.id) AS total_likes_received
+FROM users u
+LEFT JOIN books b ON u.id = b.uploaded_by
+LEFT JOIN likes l ON b.id = l.book_id
+GROUP BY u.id
+ORDER BY u.id DESC;
+            ";
+            $stmt = $this->pdo->query($sql);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        }
+        catch (PDOException $e) {
+            error_log("users::getAllUsersWithStats — " . $e->getMessage());
             return [];
         }
     }

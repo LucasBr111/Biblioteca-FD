@@ -84,6 +84,21 @@ class booksController
     // ── Actions ───────────────────────────────────────────────
 
     /**
+     * Mis Favoritos
+     */
+    public function favorites(): void
+    {
+        try {
+            $this->requireLogin();
+            $libros = $this->bookModel->getFavoritesBooks($_SESSION['user_id']);
+            $this->render('favorites', ['libros' => $libros]);
+        } catch (RuntimeException $e) {
+            $this->alert('error', $e->getMessage());
+            $this->redirect('main');
+        }
+    }
+
+    /**
      * Subida de libro (pull request)
      */
     public function upload(): void
@@ -233,6 +248,45 @@ class booksController
     }
 
     /**
+     * Procesar actualización de libro (admin)
+     */
+    public function edit(): void
+    {
+        try {
+            $this->requireAdmin();
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') throw new RuntimeException('Método no permitido.');
+            
+            $id = $this->bookId();
+            $data = [
+                'title'       => trim($_POST['title'] ?? ''),
+                'author'      => trim($_POST['author'] ?? ''),
+                'year'        => !empty($_POST['year']) ? (int)$_POST['year'] : null,
+                'genre'       => trim($_POST['genre'] ?? ''),
+                'description' => trim($_POST['description'] ?? '')
+            ];
+            
+            if (!$data['title'] || !$data['author']) throw new RuntimeException('Título y autor son obligatorios.');
+            
+            if ($this->bookModel->updateBook($id, $data)) {
+                $this->alert('success', "Libro actualizado correctamente.");
+            } else {
+                throw new RuntimeException("Error al actualizar el libro.");
+            }
+            
+            // Redirect back to referring page or admin dashboard
+            $referer = $_SERVER['HTTP_REFERER'] ?? 'index.php?c=account&a=adminDashboard';
+            header("Location: $referer");
+            exit();
+
+        } catch (RuntimeException $e) {
+            $this->alert('error', $e->getMessage());
+            $referer = $_SERVER['HTTP_REFERER'] ?? 'index.php?c=account&a=adminDashboard';
+            header("Location: $referer");
+            exit();
+        }
+    }
+
+    /**
      * Eliminar libro publicado (admin)
      */
     public function delete(): void
@@ -247,11 +301,16 @@ class booksController
             $this->bookModel->deleteBook($id);
 
             $this->alert('success', "El libro «{$book['title']}» fue eliminado del catálogo.");
-            $this->redirect('main');
+            
+            $referer = $_SERVER['HTTP_REFERER'] ?? 'index.php?c=main';
+            header("Location: $referer");
+            exit();
 
         } catch (RuntimeException $e) {
             $this->alert('error', $e->getMessage());
-            $this->redirect('main');
+            $referer = $_SERVER['HTTP_REFERER'] ?? 'index.php?c=main';
+            header("Location: $referer");
+            exit();
         }
     }
 
