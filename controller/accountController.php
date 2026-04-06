@@ -1,260 +1,189 @@
 <?php
-// app/controllers/AccountController.php
+// controller/accountController.php
 
-// Asegúrate de incluir el modelo User y el modelo Database
-// La ruta puede variar según la estructura de tu proyecto.
-require_once 'model/Database.php'; // Para asegurar que Database::StartUp() esté disponible
-require_once 'model/users.php'; // Tu modelo de usuario
+require_once 'model/Database.php';
+require_once 'model/users.php';
 
-// Para mensajes de feedback al usuario
-// require_once 'app/helpers/FlashMessage.php'; // Si tienes un sistema de mensajes flash, lo usarías aquí.
-
-class AccountController
+class accountController
 {
-    private $userModel;
+    private users $userModel;
 
     public function __construct()
     {
+        if (session_status() === PHP_SESSION_NONE) session_start();
         $this->userModel = new users();
     }
 
-    /**
-     * Genera un nuevo token CSRF si no existe en la sesión y lo devuelve.
-     * @return string El token CSRF actual.
-     */
-    private function generateCSRFToken()
+    private function alert(string $type, string $title): void
     {
-        if (empty($_SESSION['csrf_token'])) {
-            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-        }
-        return $_SESSION['csrf_token'];
+        $_SESSION['sweet_alert'] = ['type' => $type, 'title' => $title];
     }
 
-
-    /**
-     * Valida el token CSRF recibido en una solicitud.
-     * Consume el token para evitar ataques de doble envío.
-     * @param string $token El token recibido del formulario o URL.
-     * @return bool True si el token es válido, false en caso contrario.
-     */
-    private function validateCSRFToken($token)
+    private function redirect(string $controller, string $action = 'index'): void
     {
-        if (!isset($_SESSION['csrf_token']) || $token !== $_SESSION['csrf_token']) {
-            return false;
-        }
-        // Consume el token para que no se reutilice en subsiguientes envíos
-        unset($_SESSION['csrf_token']); 
-        return true;
+        $url = "index.php?c={$controller}";
+        if ($action !== 'index') $url .= "&a={$action}";
+        header("Location: {$url}");
+        exit();
     }
 
+    private function render(string $view, array $data = []): void
+    {
+        extract($data);
+        $path = __DIR__ . '/../view/account/' . $view . '.php';
+        if (!file_exists($path)) die("Vista no encontrada: {$view}");
+        include $path;
+    }
+
+    // ── Actions ───────────────────────────────────────────────
+
     /**
-     * Muestra el formulario de registro.
+     * Formulario de login.
      */
-    public function registerForm()
+    public function loginForm(): void
     {
         if (isset($_SESSION['user_id'])) {
-            header('Location: index.php?c=main');
-            exit();
+            $this->redirect('main');
         }
-         $this->render('registro'); // Asumiendo que tienes una vista 'register.php'
+        $this->render('login');
     }
 
     /**
-     * Procesa el registro de un nuevo usuario.
+     * Procesa el login.
      */
-    public function register()
+    public function login(): void
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            $this->showMessageAndRedirect('error', 'Método de solicitud no permitido.', 'account', 'registerForm', ''); 
-            return;
+            $this->redirect('account', 'loginForm');
         }
 
-        if (!$this->validateCSRFToken($_POST['csrf_token'] ?? '')) {
-            $this->showMessageAndRedirect('error', 'Error de seguridad: Token CSRF inválido. Por favor, recarga la página e inténtalo de nuevo.', 'account', 'registerForm', 'Token inválido'); 
-            return;
+        $identifier = trim($_POST['username_or_email'] ?? '');
+        $password   = $_POST['password'] ?? '';
+
+        if (!$identifier || !$password) {
+            $this->alert('warning', 'Por favor, ingresá tu usuario y contraseña.');
+            $this->redirect('account', 'loginForm');
         }
 
-        // 2. Validar datos de entrada
+        $user = $this->userModel->login($identifier, $password);
+
+        if (!$user) {
+            // Un mensaje estándar por seguridad (no revelar si falló el usuario o la clave)
+            $this->alert('error', 'Las credenciales ingresadas no son correctas.');
+            $this->redirect('account', 'loginForm');
+        }
+
+        // Iniciar sesión
+        session_regenerate_id(true);
+        $_SESSION['user_id']  = $user['id'];
+        $_SESSION['username'] = $user['username'];
+        $_SESSION['is_admin'] = (bool)$user['is_admin'];
+
+        $this->alert('success', '¡Bienvenido, ' . htmlspecialchars($user['username']) . '!');
+        $this->redirect('main');
+    }
+
+    /**
+     * Formulario de registro.
+     */
+    public function registerForm(): void
+    {
+        if (isset($_SESSION['user_id'])) {
+            $this->redirect('main');
+        }
+        $this->render('registro');
+    }
+
+    /**
+     * Procesa el registro.
+     */
+    public function register(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->redirect('account', 'registerForm');
+        }
+
         $username = trim($_POST['username'] ?? '');
-        $email = trim($_POST['email'] ?? '');
+        $email    = trim($_POST['email'] ?? '');
         $password = $_POST['password'] ?? '';
-        $confirmPassword = $_POST['confirm_password'] ?? '';
+        $confirm  = $_POST['confirm_password'] ?? '';
 
-        if (empty($username) || empty($email) || empty($password) || empty($confirmPassword)) {
-            $this->showMessageAndRedirect('error', 'Todos los campos son obligatorios.', 'account', 'registerForm');
-            return;
+        // 1. Validación de campos vacíos
+        if (!$username || !$email || !$password || !$confirm) {
+            $this->alert('warning', 'Debes completar todos los campos del formulario.');
+            $this->redirect('account', 'registerForm');
         }
 
+        // 2. Validación de formato de email
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $this->showMessageAndRedirect('error', 'Formato de correo electrónico inválido.', 'account', 'registerForm');
-            return;
+            $this->alert('warning', 'El formato del correo electrónico no es válido.');
+            $this->redirect('account', 'registerForm');
         }
 
-        if (strlen($username) < 3 || strlen($username) > 50) {
-            $this->showMessageAndRedirect('error', 'El nombre de usuario debe tener entre 3 y 50 caracteres.', 'account', 'registerForm');
-            return;
+        // 3. Validación de longitud de usuario
+        if (strlen($username) < 3 || strlen($username) > 20) {
+            $this->alert('warning', 'El usuario debe tener entre 3 y 20 caracteres.');
+            $this->redirect('account', 'registerForm');
         }
 
+        // 4. Validación de longitud de contraseña
         if (strlen($password) < 6) {
-            $this->showMessageAndRedirect('error', 'La contraseña debe tener al menos 6 caracteres.', 'account', 'registerForm');
-            return;
+            $this->alert('warning', 'La contraseña es muy corta. Usa al menos 6 caracteres.');
+            $this->redirect('account', 'registerForm');
         }
 
-        if ($password !== $confirmPassword) {
-            $this->showMessageAndRedirect('error', 'Las contraseñas no coinciden.', 'account', 'registerForm');
-            return;
+        // 5. Validación de coincidencia de contraseñas
+        if ($password !== $confirm) {
+            $this->alert('error', 'Las contraseñas no coinciden. Verifícalas e inténtalo de nuevo.');
+            $this->redirect('account', 'registerForm');
         }
 
         try {
-            // 3. Intentar registrar al usuario
-            // Por defecto, un usuario registrado NO es administrador
-            $newUserId = $this->userModel->register($username, $email, $password, false);
-
-            if ($newUserId) {
-                // Registro exitoso, iniciar sesión automáticamente
-                $_SESSION['user_id'] = $newUserId;
-                $_SESSION['username'] = $username;
-                $_SESSION['is_admin'] = false; // El nuevo usuario no es admin por defecto
-                session_regenerate_id(true); // Regenerar ID de sesión por seguridad
-
-                $this->showMessageAndRedirect('success', '¡Registro exitoso! Bienvenido.', 'main'); // Redirigir al home
-            } else {
-                // Esto podría ocurrir si hay un error en la base de datos no capturado por el try-catch interno del modelo
-                $this->showMessageAndRedirect('error', 'Error al registrar el usuario. Inténtalo de nuevo.', 'account', 'registerForm');
+            $userId = $this->userModel->create($username, $email, $password);
+            
+            if (!$userId) {
+                $this->alert('error', 'No se pudo generar tu cuenta. Intenta de nuevo más tarde.');
+                $this->redirect('account', 'registerForm');
             }
+
+            // Iniciar sesión automáticamente
+            $user = $this->userModel->login($username, $password);
+            if ($user) {
+                session_regenerate_id(true);
+                $_SESSION['user_id']  = $user['id'];
+                $_SESSION['username'] = $user['username'];
+                $_SESSION['is_admin'] = (bool)$user['is_admin'];
+                
+                $this->alert('success', '¡Cuenta creada con éxito! Bienvenido, ' . htmlspecialchars($user['username']) . '.');
+                $this->redirect('main');
+            } else {
+                 $this->alert('success', '¡Cuenta creada con éxito! Por favor inicia sesión.');
+                 $this->redirect('account', 'loginForm');
+            }
+
+        } catch (RuntimeException $e) {
+            // AQUI ESTÁ LA MAGIA: Pasamos el mensaje exacto del modelo ("El usuario o email ya existe.")
+            $this->alert('error', $e->getMessage());
+            $this->redirect('account', 'registerForm');
         } catch (Exception $e) {
-            // Capturar excepciones lanzadas por el modelo (ej. usuario/email duplicado)
-            $this->showMessageAndRedirect('error', $e->getMessage(), 'account', 'registerForm');
+            $this->alert('error', 'Error del servidor. Por favor, intenta más tarde.');
+            $this->redirect('account', 'registerForm');
         }
     }
 
     /**
-     * Muestra el formulario de login.
+     * Cierra la sesión.
      */
-    public function loginForm()
+    public function logout(): void
     {
-        // Si el usuario ya está logueado, redirigir al home
-        if (isset($_SESSION['user_id'])) {
-            header('Location: index.php?c=main');
-            exit();
+        $_SESSION = [];
+        if (ini_get('session.use_cookies')) {
+            $p = session_get_cookie_params();
+            setcookie(session_name(), '', time() - 3600, $p['path'], $p['domain'], $p['secure'], $p['httponly']);
         }
-        $this->render('login', ['csrf_token' => $this->generateCSRFToken()]);
-    }
-
-    /**
-     * Procesa el login de un usuario.
-     */
-    public function login()
-    {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            $this->showMessageAndRedirect('error', 'Método de solicitud no permitido.', 'account', 'loginForm', ''); 
-            return;
-        }
-
-        if (!$this->validateCSRFToken($_POST['csrf_token'] ?? '')) {
-            $this->showMessageAndRedirect('error', 'Error de seguridad: Token CSRF inválido. Por favor, recarga la página e inténtalo de nuevo.', 'account', 'loginForm', 'Token inválido'); 
-            return;
-        }
-
-    
-
-        // 2. Validar datos de entrada
-        $usernameOrEmail = trim($_POST['username_or_email'] ?? '');
-        $password = $_POST['password'] ?? '';
-
-        if (empty($usernameOrEmail) || empty($password)) {
-            $this->showMessageAndRedirect('error', 'Por favor, introduce tu nombre de usuario/email y contraseña.', 'account', 'loginForm');
-            return;
-        }
-
-        // 3. Intentar iniciar sesión
-        $userData = $this->userModel->login($usernameOrEmail, $password);
-
-        if ($userData) {
-            // Login exitoso, guardar datos en sesión
-            $_SESSION['user_id'] = $userData['id'];
-            $_SESSION['username'] = $userData['username'];
-            $_SESSION['is_admin'] = (bool)$userData['is_admin']; // Asegúrate de guardar un booleano
-            session_regenerate_id(true); // Regenerar ID de sesión por seguridad
-
-            $this->showMessageAndRedirect('success', '¡Bienvenido de nuevo, ' . htmlspecialchars($userData['username']) . '!', 'main');
-        } else {
-            // Credenciales inválidas
-            $this->showMessageAndRedirect('error', 'Nombre de usuario/email o contraseña incorrectos.', 'account', 'loginForm');
-        }
-    }
-
-    /**
-     * Cierra la sesión del usuario.
-     */
-    public function logout()
-    {
-        session_unset();   
         session_destroy();
-
-
-//elimina la cookie de sesión si se está utilizando
-        if (ini_get("session.use_cookies")) {
-            $params = session_get_cookie_params();
-            setcookie(session_name(), '', time() - 42000,
-                $params["path"], $params["domain"],
-                $params["secure"], $params["httponly"]
-            );
-        }
-
-        $this->showMessageAndRedirect('success', 'Has cerrado sesión correctamente.', 'main');
-    }
-
-    /**
-     * Renderiza una vista y pasa datos a ella, incluyendo el token CSRF.
-     * @param string $viewName El nombre de la vista (sin .php).
-     * @param array $data Un array asociativo de datos a pasar a la vista.
-     */
-
-    private function render(string $viewName, array $data = [])
-    {
-        
-        extract($data);
-
-        if (!isset($csrf_token)) {
-            $csrf_token = $this->generateCSRFToken();
-        }
-
-        // Incluye el archivo de la vista
-        $viewPath = __DIR__ . '/../view/account/' . $viewName . '.php'; // Ajusta la ruta si es necesario
-
-        if (file_exists($viewPath)) {
-            include $viewPath;
-        } else {
-            // Manejo de error si la vista no existe
-            die("Error: Vista '{$viewName}.php' no encontrada en '{$viewPath}'");
-        }
-    }
-
-    /**
-     * Muestra un mensaje SweetAlert y redirige.
-     * Esto requiere que tu layout (main.php) tenga SweetAlert2 incluido.
-     * Los mensajes se guardan en sesión y se consumen una vez.
-     *
-     * @param string $type  Tipo de SweetAlert (success, error, warning, info, question)
-     * @param string $title Título del mensaje
-     * @param string $controller Controlador al que redirigir
-     * @param string $action    Acción del controlador al que redirigir (opcional)
-     * @param string $text      Texto adicional para el mensaje de SweetAlert (opcional)
-     */
-    private function showMessageAndRedirect(string $type, string $title, string $controller, string $text = '', string $action = 'index')
-    {
-        $_SESSION['sweet_alert'] = [
-            'type' => $type,
-            'title' => $title,
-            'text' => $text // Puedes añadir un campo 'text' si quieres mensajes más largos
-        ];
-
-        $location = "index.php?c={$controller}";
-        if ($action !== 'index') { // Solo añade la acción si no es la por defecto
-            $location .= "&a={$action}";
-        }
-        header("Location: {$location}");
-        exit();
+        session_start();
+        $this->alert('success', 'Sesión cerrada correctamente. ¡Hasta pronto!');
+        $this->redirect('main');
     }
 }

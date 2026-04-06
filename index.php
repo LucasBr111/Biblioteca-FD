@@ -1,45 +1,51 @@
 <?php
-require_once "model/database.php";
+// index.php — Front controller
 
-if (session_status() == PHP_SESSION_NONE) {
+require_once 'model/database.php';
+
+if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Verificar si estamos en la URL base
-$currentUrl = $_SERVER['REQUEST_URI'];
-$baseUrl = '/fd/';
-
-if ($currentUrl === $baseUrl || $currentUrl === '/fd/index.php') {
-    header('Location: /fd/index.php?c=main');
+// Redirigir raíz
+if (empty($_GET['c']) && empty($_GET['a'])) {
+    header('Location: index.php?c=main');
     exit();
 }
 
-// Resto del código existente
-$controller = isset($_GET['c']) ? strtolower($_GET['c']) : 'main';
-$action = isset($_GET['a']) ? strtolower($_GET['a']) : 'index';
+$controller = strtolower($_GET['c'] ?? 'main');
+$action     = strtolower($_GET['a'] ?? 'index');
 
-// Validar que el controlador exista
-$controllerFile = "controller/" . $controller . "Controller.php";
+// Permitir solo caracteres seguros
+if (!preg_match('/^[a-z]+$/', $controller) || !preg_match('/^[a-z]+$/', $action)) {
+    http_response_code(404);
+    include 'view/error/404.php';
+    exit();
+}
+
+$controllerFile  = "controller/{$controller}Controller.php";
+$controllerClass = ucfirst($controller) . 'Controller';
 
 if (!file_exists($controllerFile)) {
-    include_once 'view/error/404.php';
+    http_response_code(404);
+    include 'view/error/404.php';
     exit();
 }
 
 require_once $controllerFile;
-$controllerClass = ucfirst($controller) . "Controller";
 
 if (!class_exists($controllerClass)) {
-    include_once 'view/error/404.php';
+    http_response_code(404);
+    include 'view/error/404.php';
     exit();
 }
 
-$controllerInstance = new $controllerClass();
+$instance = new $controllerClass();
 
-if (!method_exists($controllerInstance, $action)) {
-    include_once 'view/error/404.php';
+if (!method_exists($instance, $action)) {
+    http_response_code(404);
+    include 'view/error/404.php';
     exit();
 }
 
-// Ejecutar la acción
-$controllerInstance->$action();
+$instance->$action();

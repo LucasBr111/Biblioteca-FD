@@ -1,237 +1,168 @@
 <?php
-// registro.php
-
-// Esto es importante para que SweetAlert pueda consumir el mensaje
-if (session_status() == PHP_SESSION_NONE) session_start();
-
-// La variable $csrf_token debe ser pasada desde el controlador.
-// Si no está definida (ej. por acceso directo), se inicializa a vacío para evitar errores PHP.
-$csrf_token = $csrf_token ?? ''; 
+// view/account/registro.php
+if (session_status() === PHP_SESSION_NONE) session_start();
+if (isset($_SESSION['user_id'])) { header('Location: index.php?c=main'); exit(); }
 ?>
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro de Usuario</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.12.2/dist/sweetalert2.min.css">
-    <link rel="stylesheet" href="../../css/style.css">
-    <!--<style>
-        body {
-            background: linear-gradient(135deg, #a7bfe8, #619af0);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: 'Poppins', sans-serif;
-        }
-        .register-container {
-            background-color: rgba(255, 255, 255, 0.95);
-            padding: 2.5rem;
-            border-radius: 1rem;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-            max-width: 500px;
-            width: 100%;
-        }
-        .register-container h2 {
-            color: #34495e;
-            margin-bottom: 1.5rem;
-            font-weight: 700;
-        }
-        .btn-register {
-            background-color: #2ecc71;
-            border-color: #2ecc71;
-            transition: background-color 0.3s ease;
-        }
-        .btn-register:hover {
-            background-color: #27ae60;
-            border-color: #27ae60;
-        }
-    </style>-->
-    <style>
-:root {
-    --color1: #0c577c; 
-    --color2: #09486c; 
-    --color3: #063a5c;
-    --color4: #032b4b; 
-    --color5: #001c3b; 
-
-    --text-light: #e0e0e0;
-    --text-dark: #333;
-    --background-light: #f8f9fa; 
-    --background-dark: var(--color5);
-    --transition: all 0.3s ease;
-    --shadow-light: rgba(0, 0, 0, 0.08);
-    --shadow-dark: rgba(0, 0, 0, 0.2);
-}
-
-body {
-    background: linear-gradient(135deg, var(--color3), var(--color5));
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: 'Poppins', sans-serif;
-    color: var(--text-dark); 
-}
-
-.register-container {
-
-    background-color: rgba(255, 255, 255, 0.98); 
-    padding: 3.5rem; 
-    border-radius: 1.5rem; 
-    box-shadow: 0 15px 40px var(--shadow-dark);
-    max-width: 550px; 
-    width: 100%;
-    text-align: center; 
-    border: 1px solid rgba(0, 0, 0, 0.05);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.register-container:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 20px 50px var(--shadow-dark);
-}
-
-.register-container h2 {
-    color: var(--color1); 
-    margin-bottom: 2.2rem; 
-    font-weight: 700;
-    font-size: 2.4rem; 
-    letter-spacing: 0.8px; 
-    position: relative;
-    padding-bottom: 12px; 
-}
-
-.register-container h2::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 80px; 
-    height: 4px; 
-    background-color: var(--color2); 
-    border-radius: 2px;
-}
-
-.form-control { 
-    border: 1px solid var(--color4); 
-    padding: 0.9rem 1.3rem;
-    border-radius: 0.8rem; 
-    font-size: 1.05rem;
-    color: var(--text-dark);
-    margin-bottom: 1rem; 
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
-}
-
-.form-control:focus {
-    border-color: var(--color1); 
-    box-shadow: 0 0 0 0.25rem rgba(12, 87, 124, 0.25); 
-}
-
-/* --- Botón de Registro --- */
-.btn-register {
-    background-color: var(--color1); 
-    border-color: var(--color1);
-    color: var(--text-light);
-    padding: 1.1rem 3rem; 
-    font-size: 1.2rem; 
-    font-weight: 600;
-    border-radius: 0.8rem; 
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2); 
-    transition: all 0.3s ease; 
-    width: 100%; 
-    margin-top: 2rem; 
-}
-
-.btn-register:hover {
-    background-color: var(--color2); 
-    border-color: var(--color2);
-    transform: translateY(-3px); 
-    box-shadow: 0 12px 25px rgba(0, 0, 0, 0.3);
-}
-
-.btn-register:active {
-    background-color: var(--color3); 
-    border-color: var(--color3);
-    transform: translateY(0); 
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-}
-
-
-.register-links {
-    margin-top: 1.5rem;
-    font-size: 0.95rem;
-}
-
-.register-links a {
-    color: var(--color3); 
-    text-decoration: none;
-    transition: color 0.3s ease;
-}
-
-.register-links a:hover {
-    color: var(--color1); 
-    text-decoration: underline;
-}
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crear Cuenta — Biblioteca FD</title>
+  <meta name="theme-color" content="#000e1a">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <div class="register-container text-center">
-        <h2 class="mb-4">Registro de Usuario</h2>
-        <form action="index.php?c=account&a=register" method="POST">
-            <div class="mb-3">
-                <input type="text" class="form-control" name="username" placeholder="Nombre de Usuario" required>
-            </div>
-            <div class="mb-3">
-                <input type="email" class="form-control" name="email" placeholder="Correo Electrónico" required>
-            </div>
-            <div class="mb-3">
-                <input type="password" class="form-control" name="password" placeholder="Contraseña" required>
-            </div>
-            <div class="mb-4">
-                <input type="password" class="form-control" name="confirm_password" placeholder="Confirmar Contraseña" required>
-            </div>
-            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token ?? ''); ?>">
-            <button type="submit" class="btn btn-register btn-lg w-100">Registrarse</button>
-        </form>
-        <p class="mt-4">¿Ya tienes una cuenta? <a href="index.php?c=account&a=loginForm">Inicia Sesión aquí</a></p>
+
+<div class="hero-orb hero-orb-1" style="opacity:.15;width:500px;height:500px;top:-150px;left:-150px"></div>
+<div class="hero-orb hero-orb-2" style="opacity:.08;width:350px;height:350px;bottom:-80px;right:-80px"></div>
+
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <img src="assets/img/logo_fd.png" alt="Logo" onerror="this.style.display='none'">
+      <h1>Biblioteca FD</h1>
+      <p>Creá tu cuenta para unirte a la biblioteca</p>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.12.2/dist/sweetalert2.all.min.js"></script>
+    <form action="index.php?c=account&a=register" method="POST" id="registerForm">
+      
+      <div class="form-group">
+        <label class="form-label"><i class="fa-solid fa-user" style="margin-right:.35rem;color:var(--accent)"></i>Nombre de usuario</label>
+        <input type="text" class="form-control" name="username" id="username"
+          placeholder="Elegí un nombre de usuario" required autofocus>
+      </div>
 
-    <?php
-    // Manejador de SweetAlert directamente incrustado
-    if (isset($_SESSION['sweet_alert'])) {
-        $alert = $_SESSION['sweet_alert'];
-        unset($_SESSION['sweet_alert']); // Consumir el mensaje
-        $type = htmlspecialchars($alert['type']);
-        $title = htmlspecialchars($alert['title']);
-    ?>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            Swal.fire({
-                icon: '<?php echo $type; ?>',
-                title: '<?php echo $title; ?>',
-                toast: true,
-                position: 'top-end',
-                showConfirmButton: false,
-                timer: 3000,
-                timerProgressBar: true,
-                didOpen: (toast) => {
-                    toast.addEventListener('mouseenter', Swal.stopTimer);
-                    toast.addEventListener('mouseleave', Swal.resumeTimer);
-                }
-            });
-        });
-    </script>
-    <?php
+      <div class="form-group">
+        <label class="form-label"><i class="fa-solid fa-envelope" style="margin-right:.35rem;color:var(--accent)"></i>Correo electrónico</label>
+        <input type="email" class="form-control" name="email" id="email"
+          placeholder="Ingresá tu correo" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label"><i class="fa-solid fa-lock" style="margin-right:.35rem;color:var(--accent)"></i>Contraseña</label>
+        <div style="position:relative">
+          <input type="password" class="form-control" name="password" id="passInput1"
+            placeholder="Creá una contraseña" required style="padding-right:2.5rem">
+          <button type="button"
+            style="position:absolute;right:.75rem;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:.9rem"
+            onclick="togglePass('passInput1', this)" tabindex="-1">
+            <i class="fa-regular fa-eye"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label"><i class="fa-solid fa-check-circle" style="margin-right:.35rem;color:var(--accent)"></i>Confirmar contraseña</label>
+        <div style="position:relative">
+          <input type="password" class="form-control" name="confirm_password" id="passInput2"
+            placeholder="Repetí tu contraseña" required style="padding-right:2.5rem">
+          <button type="button"
+            style="position:absolute;right:.75rem;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:.9rem"
+            onclick="togglePass('passInput2', this)" tabindex="-1">
+            <i class="fa-regular fa-eye"></i>
+          </button>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary w-100" style="justify-content:center;margin-top:.5rem;padding:.75rem">
+        <i class="fa-solid fa-user-plus"></i> Registrarme
+      </button>
+    </form>
+
+    <div style="margin-top:1.25rem;text-align:center">
+      <a href="index.php?c=main" style="font-size:.85rem;color:var(--text-muted)">
+        <i class="fa-solid fa-arrow-left"></i> Volver al inicio
+      </a>
+    </div>
+
+    <div style="margin-top:1rem;padding:.75rem;border-radius:var(--radius-sm);background:rgba(56,189,248,0.07);border:1px solid rgba(56,189,248,0.15);font-size:.85rem;color:var(--text-muted);text-align:center">
+      ¿Ya tenés una cuenta? <a href="index.php?c=account&a=loginForm" style="color:var(--accent);font-weight:600">Ingresar</a>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+function togglePass(inputId, btn) {
+  const input = document.getElementById(inputId);
+  const showing = input.type === 'text';
+  input.type = showing ? 'password' : 'text';
+  btn.querySelector('i').className = showing ? 'fa-regular fa-eye' : 'fa-regular fa-eye-slash';
+}
+
+function showToast(message, type = 'success') {
+  const icons = { success: 'fa-circle-check', error: 'fa-circle-exclamation', warning: 'fa-triangle-exclamation' };
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.innerHTML = `<i class="fa-solid ${icons[type]}"></i><span>${message}</span>`;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.classList.add('toast-out');
+    toast.addEventListener('animationend', () => toast.remove());
+  }, 3500);
+}
+
+// Consumo de las alertas desde el backend (PHP a JS)
+<?php if (isset($_SESSION['sweet_alert'])):
+  $alert = $_SESSION['sweet_alert'];
+  unset($_SESSION['sweet_alert']); ?>
+document.addEventListener('DOMContentLoaded', () => {
+  showToast(<?= json_encode($alert['title'] . (isset($alert['text']) && !empty($alert['text']) ? " - " . $alert['text'] : "")) ?>, <?= json_encode($alert['type']) ?>);
+});
+<?php endif; ?>
+
+// --- VALIDACIONES FRONTEND CON JAVASCRIPT ---
+document.getElementById('registerForm').addEventListener('submit', function(e) {
+    // 1. Obtener los valores y limpiarlos de espacios en blanco
+    const username = document.getElementById('username').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('passInput1').value;
+    const confirm = document.getElementById('passInput2').value;
+
+    // Validación 1: Campos vacíos (Aunque HTML 'required' ayuda, esto lo refuerza)
+    if (!username || !email || !password || !confirm) {
+        e.preventDefault();
+        showToast('Debes completar todos los campos del formulario.', 'warning');
+        return;
     }
-    ?>
+
+    // Validación 2: Formato de email con Expresión Regular
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        e.preventDefault();
+        showToast('El formato del correo electrónico no es válido.', 'warning');
+        return;
+    }
+
+    // Validación 3: Longitud de usuario
+    if (username.length < 3 || username.length > 20) {
+        e.preventDefault();
+        showToast('El usuario debe tener entre 3 y 20 caracteres.', 'warning');
+        return;
+    }
+
+    // Validación 4: Longitud de contraseña
+    if (password.length < 6) {
+        e.preventDefault();
+        showToast('La contraseña es muy corta. Usa al menos 6 caracteres.', 'warning');
+        return;
+    }
+
+    // Validación 5: Coincidencia de contraseñas
+    if (password !== confirm) {
+        e.preventDefault();
+        showToast('Las contraseñas no coinciden. Verifícalas e inténtalo de nuevo.', 'error');
+        return;
+    }
+
+    // Si todo está correcto, el evento 'submit' continuará naturalmente y enviará el POST a PHP.
+});
+</script>
 </body>
 </html>

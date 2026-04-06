@@ -1,52 +1,103 @@
 <?php
+// model/books.php
+
 class books
 {
-    private $pdo;
-    public $books;
-    public $title;
-    public $author;
-    public $year;
-    public $genre;
-    public $description;
-    public $cover_image_path;
-    public $pdf_path;
-    public $url_resumen;
+    private PDO $pdo;
 
     public function __construct()
     {
-        // Conexión a la base de datos
-        // Asegúrate de que Database::StartUp() devuelva una instancia de PDO
         $this->pdo = Database::StartUp();
     }
 
+    // ── Reads ─────────────────────────────────────────────────
+
     /**
-     * Inserta un nuevo libro en la base de datos como una solicitud (pull).
-     * Por defecto, el libro NO estará publicado.
-     *
-     * @param array $data Datos del libro: title, author, year, genre, description, cover_image_path, pdf_path, summary_url
-     * @return int|false El ID del libro insertado o false en caso de error.
-     * @throws Exception Si el título o PDF ya existen, o si hay un error de DB.
+     * Todos los libros publicados con conteo de likes.
+     * Si se pasa $userId, indica si el usuario ya dio like.
      */
-    public function uploadBookPull(array $data)
+    public function getAllPublishedBooks(?int $userId = null): array
     {
         try {
-            // Añadir logging
-            error_log("Intentando subir libro: " . print_r($data, true));
-            
-            $stmt = $this->pdo->prepare("SELECT id FROM books WHERE title = ?");
-            $stmt->execute([$data['title']]);
-            
-            if ($stmt->fetch()) {
-                throw new Exception("Ya existe un libro con este título.");
-            }
-
-            $sql = "INSERT INTO books (
-                title, author, year, genre, description, 
-                image_path, pdf_path, url_resumen, publicado
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'no')";
-            
+            $sql = "
+                SELECT b.*,
+                       COUNT(DISTINCT l.id) AS likes,
+                       MAX(u.email) AS uploader_email,
+                       MAX(u.username) AS uploader_username
+                       " . ($userId ? ", MAX(CASE WHEN l.user_id = :uid THEN 1 ELSE 0 END) AS user_liked" : ", 0 AS user_liked") . "
+                FROM books b
+                LEFT JOIN likes l ON l.book_id = b.id
+                LEFT JOIN users u ON b.uploaded_by = u.id
+                WHERE b.publicado = 'si'
+                GROUP BY b.id
+                ORDER BY b.id DESC
+            ";
             $stmt = $this->pdo->prepare($sql);
-            $result = $stmt->execute([
+            if ($userId) $stmt->bindValue(':uid', $userId, PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("getAllPublishedBooks: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function getAllBooks(?int $userId = null): array
+    {
+        return $this->getAllPublishedBooks($userId);
+    }
+
+    /**
+     * Solicitudes pendientes de publicación.
+     */
+    public function getAllPulls(): array
+    {
+        try {
+            $stmt = $this->pdo->prepare(
+                "SELECT b.*, u.email AS uploader_email FROM books b LEFT JOIN users u ON b.uploaded_by = u.id WHERE b.publicado = 'no' ORDER BY b.id DESC"
+            );
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("getAllPulls: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Libro por ID.
+     */
+    public function getBookById(int $id): array|false
+    {
+        try {
+            $stmt = $this->pdo->prepare("SELECT * FROM books WHERE id = ?");
+            $stmt->execute([$id]);
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("getBookById: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    // ── Writes ────────────────────────────────────────────────
+
+    /**
+     * Inserta un libro con publicado = 'no'.
+     */
+    public function uploadBookPull(array $data): int|false
+    {
+        try {
+            // Verificar título duplicado
+            $check = $this->pdo->prepare("SELECT id FROM books WHERE title = ?");
+            $check->execute([$data['title']]);
+            if ($check->fetch()) throw new RuntimeException("Ya existe un libro con ese título.");
+
+            $stmt = $this->pdo->prepare("
+                INSERT INTO books
+                  (title, author, year, genre, description, image_path, pdf_path, url_resumen, publicado, uploaded_by)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'no', ?)
+            ");
+            $stmt->execute([
                 $data['title'],
                 $data['author'],
                 $data['year'],
@@ -54,113 +105,94 @@ class books
                 $data['description'],
                 $data['cover_image_path'],
                 $data['pdf_path'],
-                $data['url_resumen'] ?? null
+                $data['url_resumen'] ?? null,
+                $data['uploaded_by'] ?? null,
             ]);
-
-            if (!$result) {
-                error_log("Error al insertar libro: " . print_r($stmt->errorInfo(), true));
-                throw new Exception("Error al insertar el libro en la base de datos");
-            }
-
-            return $this->pdo->lastInsertId();
-
+            return (int)$this->pdo->lastInsertId();
         } catch (PDOException $e) {
-            error_log("Error PDO en uploadBookPull: " . $e->getMessage());
-            throw new Exception("Error en la base de datos: " . $e->getMessage());
+            error_log("uploadBookPull: " . $e->getMessage());
+            return false;
         }
     }
 
     /**
-     * Obtiene todos los libros marcados como 'no' publicados (los pulls pendientes).
-     *
-     * @return array Una lista de libros.
+     * Publica un libro (cambia publicado a 'si').
      */
-    public function getAllPulls()
-    {
-        try {
-            $stmt = $this->pdo->prepare("SELECT * FROM books WHERE publicado = 'no' ORDER BY id DESC");
-            $stmt->execute();
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            error_log("Database error in getAllPulls: " . $e->getMessage());
-            return [];
-        }
-    }
-
-    /**
-     * Obtiene todos los libros marcados como 'si' publicados.
-     *
-     * @return array Una lista de libros.
-     */
-    public function getAllPublishedBooks()
-    {
-        try {
-            $stmt = $this->pdo->prepare("SELECT * FROM books WHERE publicado = 'si' ORDER BY id DESC");
-            $stmt->execute();
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            error_log("Database error in getAllPublishedBooks: " . $e->getMessage());
-            return [];
-        }
-    }
-
-    /**
-     * Actualiza el estado de un libro a 'publicado' ('si').
-     *
-     * @param int $bookId El ID del libro a publicar.
-     * @return bool True si se actualizó, false en caso contrario.
-     */
-    public function publishBook(int $bookId)
+    public function publishBook(int $id): bool
     {
         try {
             $stmt = $this->pdo->prepare("UPDATE books SET publicado = 'si' WHERE id = ?");
-            return $stmt->execute([$bookId]);
+            return $stmt->execute([$id]);
         } catch (PDOException $e) {
-            error_log("Database error in publishBook: " . $e->getMessage());
+            error_log("publishBook: " . $e->getMessage());
             return false;
         }
     }
 
     /**
-     * Elimina un libro de la base de datos.
-     * NO elimina los archivos, eso debe ser manejado en el controlador.
-     *
-     * @param int $bookId El ID del libro a eliminar.
-     * @return bool True si se eliminó, false en caso contrario.
+     * Elimina un libro.
      */
-    public function deleteBook(int $bookId)
+    public function deleteBook(int $id): bool
     {
         try {
             $stmt = $this->pdo->prepare("DELETE FROM books WHERE id = ?");
-            return $stmt->execute([$bookId]);
+            return $stmt->execute([$id]);
         } catch (PDOException $e) {
-            error_log("Database error in deleteBook: " . $e->getMessage());
+            error_log("deleteBook: " . $e->getMessage());
             return false;
+        }
+    }
+
+    // ── Likes ─────────────────────────────────────────────────
+
+    /**
+     * Alterna el like de un usuario sobre un libro.
+     * Retorna ['liked' => bool, 'count' => int].
+     */
+    public function toggleLike(int $userId, int $bookId): array
+    {
+        try {
+            // Verificar si ya existe el like
+            $check = $this->pdo->prepare(
+                "SELECT id FROM likes WHERE user_id = ? AND book_id = ?"
+            );
+            $check->execute([$userId, $bookId]);
+            $existing = $check->fetch();
+
+            if ($existing) {
+                // Quitar like
+                $del = $this->pdo->prepare("DELETE FROM likes WHERE user_id = ? AND book_id = ?");
+                $del->execute([$userId, $bookId]);
+                $liked = false;
+            } else {
+                // Dar like
+                $ins = $this->pdo->prepare("INSERT INTO likes (user_id, book_id) VALUES (?, ?)");
+                $ins->execute([$userId, $bookId]);
+                $liked = true;
+            }
+
+            // Contar likes actuales
+            $count = $this->getLikeCount($bookId);
+            return ['liked' => $liked, 'count' => $count];
+
+        } catch (PDOException $e) {
+            error_log("toggleLike: " . $e->getMessage());
+            return ['liked' => false, 'count' => 0];
         }
     }
 
     /**
-     * Obtiene la información de un libro por su ID.
-     *
-     * @param int $bookId El ID del libro.
-     * @return array|false Los datos del libro o false si no se encuentra.
+     * Cuenta los likes de un libro.
      */
-    public function getBookById(int $bookId)
+    public function getLikeCount(int $bookId): int
     {
         try {
-            $stmt = $this->pdo->prepare("SELECT * FROM books WHERE id = ?");
+            $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM likes WHERE book_id = ?");
             $stmt->execute([$bookId]);
-            return $stmt->fetch(PDO::FETCH_ASSOC);
+            return (int)$stmt->fetchColumn();
         } catch (PDOException $e) {
-            error_log("Database error in getBookById: " . $e->getMessage());
-            return false;
+            error_log("getLikeCount: " . $e->getMessage());
+            return 0;
         }
-    }
-
-    // Puedes añadir aquí el método para obtener todos los libros para la vista principal
-    // (el que usabas antes del cambio de 'publicado')
-    public function getAllBooks()
-    {
-        return $this->getAllPublishedBooks(); // Ahora getAllBooks solo devuelve los publicados
     }
 }
